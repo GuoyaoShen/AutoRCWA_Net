@@ -24,7 +24,7 @@ e0 = 8.85e-12
 u0 = 1.256e-6
 yeta0 = np.sqrt(u0/e0)
 
-path_Si = 'Si_Drude_16.txt'
+path_Si = './material_property/Si_Drude_16.txt'
 eps_Si_file = data_utils.load_property_txt(path_Si)
 eps_Si_file = eps_Si_file[1:-1]
 
@@ -32,10 +32,6 @@ eps_Si_file = eps_Si_file[1:-1]
 # eps_Si_file = eps_Si_file[1:-2]
 # eps_Si_file = eps_Si_file[::2]
 eps_Si = eps_Si_file[:,1] + eps_Si_file[:,2]*1j
-
-# path_SiNx = 'SiNx_property.mat'
-# eps_SiNx = data_utils.load_property_mat(path_SiNx)
-# eps_SiNx = eps_SiNx['eps_SiNx_real'] + eps_SiNx['eps_SiNx_imag']*1j
 
 freq = eps_Si_file[:,0]*1e12
 
@@ -52,14 +48,15 @@ p = 200
 a = 160
 t = 60
 start = time.time()
-order = 11
-device = 'CPU'
-R_total, T_total = rcwa_utils.rcwa_solver_Si_test(freq, eps_Si,
-                        L_param=p, w_param=a, t_param=t, use_logger=True, PQ_order=order)  #Solving Time: 57.87713408470154
 
-# device = 'GPU'
-# R_total, T_total = rcwa_utils.rcwa_solver_cuda_Si_test(freq, eps_Si,
-#                         L_param=p, w_param=a, t_param=t, use_logger=True, PQ_order=order)  #Solving Time: 82.6834077835083
+order = 11
+# device = 'CPU'
+# R_total, T_total = rcwa_utils.rcwa_solver_Si_test(freq, eps_Si,
+#                         L_param=p, w_param=a, t_param=t, use_logger=True, PQ_order=order)  #Solving Time: 57.87713408470154
+
+device = 'GPU'
+R_total, T_total = rcwa_utils.rcwa_solver_cuda_Si_test(freq, eps_Si,
+                        L_param=p, w_param=a, t_param=t, use_logger=True, PQ_order=order)  #Solving Time: 82.6834077835083
 
 end = time.time()
 print('Solving Time:', end - start)

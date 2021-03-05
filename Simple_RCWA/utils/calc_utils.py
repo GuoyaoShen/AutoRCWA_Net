@@ -61,7 +61,7 @@ def convmat(A,P,Q=1,R=1):
     return C
 
 
-def star(SA, SB):
+def star(SA, SB, device='cpu'):
     '''
     STAR Redheffer Star Product
 
@@ -87,47 +87,22 @@ def star(SA, SB):
     % .S21 S21 scattering parameter
     % .S22 S22 scattering parameter
     '''
-    N = SA['S11'].shape[0]
-    I = np.eye(N)
-    S11 = SA['S11'] + (SA['S12'] @ LA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S11'] @ SA['S21'])
-    S12 = SA['S12'] @ LA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S12']
-    S21 = SB['S21'] @ LA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S21']
-    S22 = SB['S22'] + (SB['S21'] @ LA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S22'] @ SB['S12'])
-    S = {'S11': S11, 'S12': S12, 'S21': S21, 'S22': S22}
-    return S
 
+    if device == 'gpu' or device == 'cuda':  # use GPU, cupy
+        N = SA['S11'].shape[0]
+        I = cp.eye(N)
+        S11 = SA['S11'] + (SA['S12'] @ CLA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S11'] @ SA['S21'])
+        S12 = SA['S12'] @ CLA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S12']
+        S21 = SB['S21'] @ CLA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S21']
+        S22 = SB['S22'] + (SB['S21'] @ CLA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S22'] @ SB['S12'])
+        S = {'S11': S11, 'S12': S12, 'S21': S21, 'S22': S22}
+    else:  # cpu, numpy
+        N = SA['S11'].shape[0]
+        I = np.eye(N)
+        S11 = SA['S11'] + (SA['S12'] @ LA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S11'] @ SA['S21'])
+        S12 = SA['S12'] @ LA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S12']
+        S21 = SB['S21'] @ LA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S21']
+        S22 = SB['S22'] + (SB['S21'] @ LA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S22'] @ SB['S12'])
+        S = {'S11': S11, 'S12': S12, 'S21': S21, 'S22': S22}
 
-def star_cuda(SA, SB):
-    '''
-    STAR Redheffer Star Product
-
-    % INPUT ARGUMENTS
-    % ================
-    % SA First Scattering Matrix
-    % .S11 S11 scattering parameter
-    % .S12 S12 scattering parameter
-    % .S21 S21 scattering parameter
-    % .S22 S22 scattering parameter
-    %
-    % SB Second Scattering Matrix
-    % .S11 S11 scattering parameter
-    % .S12 S12 scattering parameter
-    % .S21 S21 scattering parameter
-    % .S22 S22 scattering parameter
-    %
-    % OUTPUT ARGUMENTS
-    % ================
-    % S Combined Scattering Matrix
-    % .S11 S11 scattering parameter
-    % .S12 S12 scattering parameter
-    % .S21 S21 scattering parameter
-    % .S22 S22 scattering parameter
-    '''
-    N = SA['S11'].shape[0]
-    I = cp.eye(N)
-    S11 = SA['S11'] + (SA['S12'] @ CLA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S11'] @ SA['S21'])
-    S12 = SA['S12'] @ CLA.inv(I - (SB['S11'] @ SA['S22'])) @ SB['S12']
-    S21 = SB['S21'] @ CLA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S21']
-    S22 = SB['S22'] + (SB['S21'] @ CLA.inv(I - (SA['S22'] @ SB['S11'])) @ SA['S22'] @ SB['S12'])
-    S = {'S11': S11, 'S12': S12, 'S21': S21, 'S22': S22}
     return S

@@ -525,6 +525,7 @@ def rcwa_solver_Si_test_orig(freq, eps_Si, L_param=200, w_param=80, t_param=60, 
 
     return R_total, T_total
 
+#======================================================================================================================
 
 def rcwa_preprocess_Si_test(eps, L_param, w_param, t_param, PQ_order):
     # === Device Params
@@ -883,7 +884,7 @@ def rcwa_solver_cuda_Si_test(freq, eps_Si, L_param=200, w_param=80, t_param=60, 
             S21 = S12
             S22 = S11
             S = {'S11': S11, 'S12': S12, 'S21': S21, 'S22': S22}
-            SG = calc_utils.star_cuda(SG, S)
+            SG = calc_utils.star(SG, S, device='gpu')
 
         # === Compute Reflection Side Connection S-Matrix
         Q_ref = ur1 ** (-1) * np.block([[KX @ KY, ur1 * er1 * np.eye(KX.shape[0]) - KX ** 2],
@@ -927,8 +928,8 @@ def rcwa_solver_cuda_Si_test(freq, eps_Si, L_param=200, w_param=80, t_param=60, 
         S22 = -CLA.inv(At) @ Bt
         Strn = {'S11': S11, 'S12': S12, 'S21': S21, 'S22': S22}
 
-        SG = calc_utils.star_cuda(Sref, SG)
-        SG = calc_utils.star_cuda(SG, Strn)
+        SG = calc_utils.star(Sref, SG, device='gpu')
+        SG = calc_utils.star(SG, Strn, device='gpu')
 
         # === Compute Reflected and Transmitted Fields
         delta = np.concatenate(([np.zeros((1, np.floor(PQ[0] * PQ[1] / 2).astype(int))),
