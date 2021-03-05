@@ -10,4 +10,4 @@ This repo is still under construction, changes might be applied.
 * matplotlib
 * scipy
 * torch
-* ![cupy](https://cupy.dev/), for GPU acceleration of RCWA
+* [cupy](https://cupy.dev/), for GPU acceleration of RCWA
