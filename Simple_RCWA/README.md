@@ -1,10 +1,13 @@
 # Simple_RCWA
 A simple python version of RCWA (Rigorous Coupled‐Wave Analysis).
 
-### How to use:
+## GPU acceleration:
+Install [cupy](https://cupy.dev/) to enable the GPU version of RCWA.
+
+## How to use:
 * Use "main_rcwa.py" as a start.
 
-### Some example spectras:
+## Some example spectras:
 
 Reflection:
 
