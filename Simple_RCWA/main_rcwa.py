@@ -66,29 +66,43 @@ Ly = 0.005 * millimeters  # period along y
 N_w = 10
 num_w = 0
 w_weight_list = []
-while num_w < N_w:
-    w_weight = np.random.uniform(0.3, 0.6)
-    w_weight = np.around(w_weight, 2)
-    if np.any(np.isin(w_weight_list, w_weight)):
-        pass
-    else:  # not in list, available w
-        w_weight_list = np.append(w_weight_list, w_weight)
-        num_w += 1
+# while num_w < N_w:
+#     w_weight = np.random.uniform(0.3, 0.6)
+#     w_weight = np.around(w_weight, 2)
+#     if np.any(np.isin(w_weight_list, w_weight)):
+#         pass
+#     else:  # not in list, available w
+#         w_weight_list = np.append(w_weight_list, w_weight)
+#         num_w += 1
+#
+#     # ================= RCWA Solver
+#     w = w_weight * Ly
+#     print('[', (num_w), '/', N_w , '] w_weight =', w_weight)
+#     R_total, T_total = rcwa_utils.rcwa_solver(freq, eps_gold, eps_SiNx, w=w, use_logger=True)
+#
+#     # ================= Spectra Plot
+#     plt.figure(1)
+#     plt.plot(freq, R_total)
+#     plt.figure(2)
+#     plt.plot(freq, T_total)
+#     plt.show()
+#
+#     path = './data/fRT_w' + str(w_weight) + '.npz'
+#     np.savez(path, freq=freq, R=R_total, T=T_total)
+#     print('\n')
+#     print('FILE SAVED, w_weight =', w_weight)
+#     print('----------------')
 
-    # ================= RCWA Solver
-    w = w_weight * Ly
-    print('[', (num_w), '/', N_w , '] w_weight =', w_weight)
-    R_total, T_total = rcwa_utils.rcwa_solver(freq, eps_gold, eps_SiNx, w=w, use_logger=True)
 
-    # ================= Spectra Plot
-    plt.figure(1)
-    plt.plot(freq, R_total)
-    plt.figure(2)
-    plt.plot(freq, T_total)
-    plt.show()
+# ================= RCWA Solver
+w_weight = 0.52
+w = w_weight * Ly
+print('[', (num_w), '/', N_w , '] w_weight =', w_weight)
+R_total, T_total = rcwa_utils.rcwa_solver(freq, eps_gold, eps_SiNx, w=w, use_logger=True)
 
-    path = './data/fRT_w' + str(w_weight) + '.npz'
-    np.savez(path, freq=freq, R=R_total, T=T_total)
-    print('\n')
-    print('FILE SAVED, w_weight =', w_weight)
-    print('----------------')
+# ================= Spectra Plot
+plt.figure(1)
+plt.plot(freq, R_total)
+plt.figure(2)
+plt.plot(freq, T_total)
+plt.show()
