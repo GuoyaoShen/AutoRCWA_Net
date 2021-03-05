@@ -47,19 +47,19 @@ freq = eps_Si_file[:,0]*1e12
 p = 200
 a = 160
 t = 60
-start = time.time()
-
-order = 11
+# start = time.time()
+#
+# order = 11
 # device = 'CPU'
 # R_total, T_total = rcwa_utils.rcwa_solver_Si_test(freq, eps_Si,
 #                         L_param=p, w_param=a, t_param=t, use_logger=True, PQ_order=order)  #Solving Time: 57.87713408470154
-
-device = 'GPU'
-R_total, T_total = rcwa_utils.rcwa_solver_cuda_Si_test(freq, eps_Si,
-                        L_param=p, w_param=a, t_param=t, use_logger=True, PQ_order=order)  #Solving Time: 82.6834077835083
-
-end = time.time()
-print('Solving Time:', end - start)
+#
+# # device = 'GPU'
+# # R_total, T_total = rcwa_utils.rcwa_solver_cuda_Si_test(freq, eps_Si,
+# #                         L_param=p, w_param=a, t_param=t, use_logger=True, PQ_order=order)  #Solving Time: 82.6834077835083
+#
+# end = time.time()
+# print('Solving Time:', end - start)
 
 # PQ=5
 # CPU: Solving Time: 57.87713408470154
@@ -68,6 +68,34 @@ print('Solving Time:', end - start)
 # PQ=11
 # CPU: Solving Time: 883.4851624965668
 # GPU: Solving Time: 752.8701491355896
+
+#======================================================================================================================
+L_param=p
+w_param=a
+t_param=t
+Lx = L_param * 1e-3 * millimeters  # period along x
+Ly = L_param * 1e-3 * millimeters  # period along y
+d1 = t_param * 1e-3 * millimeters  # thickness of layer 1
+
+params_eps = [eps_Si]
+params_geometry = [Lx, Ly, [d1]]
+params_mesh = [512,512]
+order = 5
+PQ_order = [order,order]
+list_layer_funcs = [rcwa_utils.layerfunc_Si_square_hole]
+device = 'gpu'
+
+Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order, list_layer_funcs,device)
+# ER, UR, ERC, URC = Si_square_hole.rcwa_preprocess()
+start = time.time()
+R_total, T_total = Si_square_hole.rcwa_solve()
+end = time.time()
+print('Solving Time:', end - start)
+
+# PQ=5
+# CPU: Solving Time: 60.17710614204407
+# GPU: Solving Time: 88.77363109588623
+
 
 
 # ================= Spectra Plot

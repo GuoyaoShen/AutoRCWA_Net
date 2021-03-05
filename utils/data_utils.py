@@ -135,7 +135,6 @@ def generate_data(num_data, w_range, path_all_data='./data/fRT.npz', w_decimal=3
     return param_w, R, T
 
 
-
 def generate_dataset(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     '''
     Generate torch dataset and dataloader from zipped numpy dataset.
