@@ -37,3 +37,8 @@ Reflection:
 Transmission:
 
 ![](https://github.com/GuoyaoShen/Simple_RCWA/blob/main/figs/T.png)
+
+
+Reflection                 |  Transmission
+:-------------------------:|:-------------------------:
+![](https://github.com/GuoyaoShen/AutoRCWA_Net/blob/main/Simple_RCWA/figs/R_absorber_ellipse.png)  |  ![](https://github.com/GuoyaoShen/AutoRCWA_Net/blob/main/Simple_RCWA/figs/T_absorber_ellipse.png)
