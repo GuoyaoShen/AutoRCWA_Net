@@ -22,10 +22,10 @@ new_material = rcwa_utils.Material(freq, params_eps, params_geometry, params_mes
     device: 'cpu' for CPU using numpy; 'gpu' or 'cuda' for GPU using cupy
     use_logger: printing solving progress percentage
 
-* For each layer in the material, a corresponding layer function is needed in order to define patterns inside each layer (which is f1,...,fn above).
-Function "layerfunc_Si_square_hole" and "layerfunc_absorber_ellipse_hole" provide a template of how to implement this. In general, applying a function
-for each layer provides much higher flexibility for the patterns on each layer, for example, "layerfunc_Si_square_hole" contains a ellipse hole at the
-center of the corresponding layer.
+* For each layer in the material, a corresponding layer function is needed in order to define patterns inside each layer (which is f1,...,fn shown above).
+Function "layerfunc_Si_square_hole" and "layerfunc_absorber_ellipse_hole" (both located at utils.rcwa_utils) provide a template of how to implement this.
+In general, applying a function for each layer provides much higher flexibility for the patterns. For example, "layerfunc_Si_square_hole" defines a ellipse
+hole at the center of the corresponding layer.
 
 
 ## Some example spectras:
