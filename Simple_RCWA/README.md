@@ -30,6 +30,7 @@ hole at the center of the corresponding layer.
 
 ## Some example spectras:
 
-Reflection                |  Transmission
+Reflection  |  Transmission
 :-------------------------:|:-------------------------:
+![](https://github.com/GuoyaoShen/AutoRCWA_Net/blob/main/Simple_RCWA/figs/R.png)  |  ![](https://github.com/GuoyaoShen/AutoRCWA_Net/blob/main/Simple_RCWA/figs/T.png)
 ![](https://github.com/GuoyaoShen/AutoRCWA_Net/blob/main/Simple_RCWA/figs/R_absorber_ellipse.png)  |  ![](https://github.com/GuoyaoShen/AutoRCWA_Net/blob/main/Simple_RCWA/figs/T_absorber_ellipse.png)
