@@ -8,9 +8,14 @@ import cupyx
 from cupyx.scipy.sparse import csr_matrix, bmat
 import torch
 from torch import linalg as TLA
+
 import cmath
 import matplotlib
 import matplotlib.pyplot as plt
+from PIL import Image
+
+import skimage
+from skimage import draw
 
 from time import sleep
 import sys
@@ -24,6 +29,7 @@ pi = np.pi
 meters = 1
 centimeters = 1e-2 * meters
 millimeters = 1e-3 * meters
+micrometres = 1e-6 * meters
 
 # ================= Constant Define
 c0 = 3e8
@@ -1009,6 +1015,53 @@ def layerfunc_Si_square_hole(ER, params_geometry, params_mesh):
     return ER
 
 
+def layerfunc_absorber_ellipse_hole(ER, params_geometry, params_mesh):
+    D1 = 150 * micrometres
+    D2 = 130 * micrometres
+    r_radius = D1 / 2
+    c_radius = D2 / 2
+    # ================= Geometry Params
+    Lx = params_geometry[0]
+    Ly = params_geometry[1]
+    L = params_geometry[2]  # L=[d1,...,dn], thickness of layers
+
+    r = Lx / 2
+    c = Ly / 2
+
+    # ================= Mesh Params
+    Nx = params_mesh[0]
+    Ny = params_mesh[1]
+    dx = Lx / Nx
+    dy = Ly / Ny
+
+    # === Define Structure in Layers
+    nxc = np.floor(Nx / 2)
+    nyc = np.floor(Ny / 2)
+
+    # === Cross Sectional Grid
+    r_coord = Nx // 2
+    c_coord = Ny // 2
+    r_radius_coord = r_radius // dx
+    c_radius_coord = c_radius // dy
+    rr, cc = draw.ellipse(r_coord, c_coord, r_radius_coord, c_radius_coord)
+
+    # Visualize pattern
+    # img = np.zeros((Nx,Ny))
+    # img[rr,cc] = 1
+    # # print(img)
+    # # print(img[17,238])
+    # img = Image.fromarray(img*255)
+    # img.show()
+
+    # === Pattern Structure
+    ER[rr, cc] = 1.  # ellipse hole in the middle
+    # img_ER = Image.fromarray(ER * 255)
+    # img_ER.show()
+    # print(ER[256,256])
+
+    return ER
+
+
 class Material:
     def __init__(self, freq, params_eps, params_geometry, params_mesh, PQ_order, list_layer_funcs, device='cpu', use_logger=True):
         '''
@@ -1077,8 +1130,8 @@ class Material:
         UR = []
         for idx_layer in range(self.num_layers):
             ERi = list_erd[idx_layer] * np.ones((Nx, Ny))
+            ERi = self.list_layer_funcs[idx_layer](ERi, self.params_geometry, self.params_mesh)  # add geometry pattern
             ERi = ERi[..., np.newaxis]
-            ERi = self.list_layer_funcs[idx_layer](ERi, self.params_geometry, self.params_mesh)  # add geo pattern
             ER.append(ERi)
 
             URi = list_urd[idx_layer] * np.ones((Nx, Ny))
