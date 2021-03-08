@@ -1015,9 +1015,14 @@ def layerfunc_Si_square_hole(ER, params_geometry, params_mesh):
     return ER
 
 
-def layerfunc_absorber_ellipse_hole(ER, params_geometry, params_mesh):
-    D1 = 150 * micrometres
-    D2 = 130 * micrometres
+def layerfunc_absorber_ellipse_hole(ER, params_geometry, params_mesh, layer_params):
+    '''
+    layer_params: [D1, D2], two axes of the ellipse hole. Already contain the unit.
+    '''
+    # D1 = 150 * micrometres
+    # D2 = 130 * micrometres
+    D1 = layer_params[0]
+    D2 = layer_params[1]
     r_radius = D1 / 2
     c_radius = D2 / 2
     # ================= Geometry Params
@@ -1063,17 +1068,22 @@ def layerfunc_absorber_ellipse_hole(ER, params_geometry, params_mesh):
 
 
 class Material:
-    def __init__(self, freq, params_eps, params_geometry, params_mesh, PQ_order, list_layer_funcs, device='cpu', use_logger=True):
+    def __init__(self, freq, params_eps, params_geometry, params_mesh, PQ_order, list_layer_funcs, list_layer_params, source, device='cpu', use_logger=True):
         '''
-        freq: numpy array of frequencies to solve rcwa, (N_freq,)
-        params_eps: list of eps for all layers, each entry in the list is shape of (N_freq,)
-        params_geometry: [Lx,Ly,[d1,...,dn]], 2D geometry params and thickness for all layers
-        params_mesh: [Nx,Ny], mesh number for 2D geometry
-        PQ_order: a list of [PQ_x, PQ_y], each entry should be a singular value
+        freq: numpy array of frequencies to solve rcwa, (N_freq,).
+        params_eps: list of eps for all layers, each entry in the list is shape of (N_freq,).
+        params_geometry: [Lx,Ly,[d1,...,dn]], 2D geometry params and thickness for all layers.
+        params_mesh: [Nx,Ny], mesh number for 2D geometry.
+        PQ_order: a list of [PQ_x, PQ_y], each entry should be a singular value.
         list_layer_funcs: a list of functions [f1,...,fn] applied to each layer to define patterns inside each layer,
-                          deleting materials
-        device: 'cpu' for CPU using numpy; 'gpu' or 'cuda' for GPU using cupy
-        use_logger: printing solving progress percentage
+                          deleting materials.
+        list_layer_params: a list of params [[l1_p1,...,l1_pm1],...,[ln_p1,...,ln_pmn]], each entry is also a list for
+                          the i th layer corresponding to the "list_layer_funcs". They should already contain units
+                          inside (eg, millimeters, micrometres, etc).
+        source: source of incident light, a list, [ginc, EP], each entry (ginc, EP) is also a list, both ginc and EP
+                should be a unit vector.
+        device: 'cpu' for CPU using numpy; 'gpu' or 'cuda' for GPU using cupy.
+        use_logger: printing solving progress percentage.
         '''
         self.freq = freq
         self.params_eps = params_eps
@@ -1081,6 +1091,8 @@ class Material:
         self.params_mesh = params_mesh
         self.PQ_order = PQ_order
         self.list_layer_funcs = list_layer_funcs
+        self.list_layer_params = list_layer_params
+        self.source = source
         self.device = device
         self.use_logger = use_logger
 
@@ -1130,7 +1142,7 @@ class Material:
         UR = []
         for idx_layer in range(self.num_layers):
             ERi = list_erd[idx_layer] * np.ones((Nx, Ny))
-            ERi = self.list_layer_funcs[idx_layer](ERi, self.params_geometry, self.params_mesh)  # add geometry pattern
+            ERi = self.list_layer_funcs[idx_layer](ERi, self.params_geometry, self.params_mesh, self.list_layer_params[idx_layer])  # add geometry pattern
             ERi = ERi[..., np.newaxis]
             ER.append(ERi)
 
@@ -1168,8 +1180,10 @@ class Material:
         ur2 = 1.  # permeability in transmission region
         er2 = 1.  # permeability in transmission region
         PQ = self.PQ  # this must be singular value
-        ginc = np.array([0, 0, 1])  # incident light source
-        EP = np.array([0, 1, 0])
+        # ginc = np.array([0, 0, 1])  # incident light source
+        # EP = np.array([0, 1, 0])  # orig: [0,1,0], source polarization, must be a unit vector
+        ginc = np.array(self.source[0])  # orig: [0,0,1], incident source, must be a unit vector
+        EP = np.array(self.source[1])  # orig: [0,1,0], source polarization, must be a unit vector
 
         # Geometry structure define
         Lx = self.Lx  # period along x

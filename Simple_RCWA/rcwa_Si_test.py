@@ -136,16 +136,24 @@ Lx = a * micrometres  # period along x
 Ly = a * micrometres  # period along y
 d1 = t * micrometres  # thickness of layer 1
 
+D1 = 130 * micrometres  # two axes of the ellipse hole
+D2 = 150 * micrometres
+
 params_eps = [eps_absorber]
 params_geometry = [Lx, Ly, [d1]]
 params_mesh = [512,512]
-order = 13
+order = 9
 PQ_order = [order,order]
 list_layer_funcs = [rcwa_utils.layerfunc_absorber_ellipse_hole]
+list_layer_params = [[D1, D2]]
+ginc = [0,0,1]  # orig [0,0,1], incident source
+EP = [1,0,0]  # orig [0,1,0]
+source = [ginc, EP]
 device = 'gpu'
 
 # ================= RCWA Solver
-Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order, list_layer_funcs,device)
+Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order,
+                                     list_layer_funcs, list_layer_params, source, device)
 start = time.time()
 R_total, T_total = Si_square_hole.rcwa_solve()
 end = time.time()
