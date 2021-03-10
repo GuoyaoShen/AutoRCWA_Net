@@ -184,18 +184,21 @@ def generate_dataset(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     return dataset, dataloader
 
 
-def generate_data_absorber(num_data, params_range, params_decimal, path_material_name, import_list=False, device='cpu', use_log=False):
+def generate_data_absorber(num_data, params_range, params_decimal, solver_setting_list, path_material_name, import_list=False, use_log=False):
     '''
     Generate data for absorber using Simple_RCWA package.
-    path_material_name: name for the material, this will be used to automatically generate folders for corresponding
-                        data.
+
     params_range: [[range1 for D1], [range2 for D2]], a list, each entry is a list consist: [range_start, range_end].
     params_decimal: [decimal for D1, decimal for D2], a list, each one is the desired decimal num, recommend for both to
                     be the same (i.e., same step size).
+    solver_setting_list: RCWA solver setting, [params_mesh, PQ_order, source, device].
+    path_material_name: name for the material, this will be used to automatically generate folders for corresponding
+                        data.
     '''
 
     # ================= Material Property Define
-    path_absorber = './Simple_RCWA/material_property/permittivity_absorber.txt'
+    # path_absorber = './Simple_RCWA/material_property/permittivity_absorber.txt'
+    path_absorber = './Simple_RCWA/material_property/' + path_material_name + '.txt'
     eps_absorber_file = data_utils.load_property_txt(path_absorber)
     eps_absorber_file = eps_absorber_file[::4]
     eps_absorber = eps_absorber_file[:, 1] + eps_absorber_file[:, 2] * 1j
@@ -215,15 +218,15 @@ def generate_data_absorber(num_data, params_range, params_decimal, path_material
 
     params_eps = [eps_absorber]
     params_geometry = [Lx, Ly, [d1]]
-    params_mesh = [512, 512]
-    order = 9
-    PQ_order = [order, order]
+    # params_mesh = [512, 512]
+    # order = 9
+    # PQ_order = [order, order]
     list_layer_funcs = [rcwa_utils.layerfunc_absorber_ellipse_hole]
     # list_layer_params = [[D1, D2]]
-    ginc = [0, 0, 1]  # orig [0,0,1], incident source
-    EP = [1, 0, 0]  # orig [0,1,0]
-    source = [ginc, EP]
-    device = 'gpu'
+    # ginc = [0, 0, 1]  # orig [0,0,1], incident source
+    # EP = [1, 0, 0]  # orig [0,1,0]
+    # source = [ginc, EP]
+    # device = 'gpu'
 
 
     # ================= Generate Data using RCWA
@@ -283,6 +286,12 @@ def generate_data_absorber(num_data, params_range, params_decimal, path_material
 
         if use_log:
             print('[', (num_param), '/', N_param, '] [D1, D2] =', params)
+
+        #[params_mesh, PQ_order, source, device]
+        params_mesh = solver_setting_list[0]
+        PQ_order = solver_setting_list[1]
+        source = solver_setting_list[2]
+        device = solver_setting_list[3]
         Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order,
                                              list_layer_funcs, list_layer_params, source, device, use_log)
         R_total, T_total = Si_square_hole.rcwa_solve()
@@ -344,7 +353,7 @@ def generate_dataset_absorber(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     param_other = np.array([a, t])
     param_other = np.tile(param_other, (N_data, 1))
     param = np.concatenate((params_list, param_other), axis=-1)  # [params list, param other]
-    print(param.shape)
+    # print(param.shape)
     # print(param)
 
 
@@ -355,7 +364,7 @@ def generate_dataset_absorber(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     spectra_R = np.expand_dims(spectra_R, 1)  #[N,1,N_freq]
     spectra_T = np.expand_dims(spectra_T, 1)
     spectra_RT = np.concatenate((spectra_R, spectra_T), axis=1)  #[N,2,N_freq]
-    print(spectra_RT.shape)
+    # print(spectra_RT.shape)
 
     tensor_x = torch.Tensor(param)  # transform to torch tensor
     tensor_y = torch.Tensor(spectra_RT)
@@ -369,9 +378,9 @@ def generate_dataset_absorber(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
 
 def load_data(PATH_ZIPSET):
     data = np.load(PATH_ZIPSET)
-    param_w = data['param_w']
-    param_w = param_w[..., np.newaxis]
+    params_list = data['params_list']
+    # param_w = param_w[..., np.newaxis]
     spectra_R = data['R']  # [N,893]
     spectra_T = data['T']
 
-    return param_w, spectra_R, spectra_T
+    return params_list, spectra_R, spectra_T
