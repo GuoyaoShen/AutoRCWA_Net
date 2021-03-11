@@ -123,7 +123,7 @@ Ellipse hole absorber.
 path_absorber = './material_property/permittivity_absorber.txt'
 eps_absorber_file = data_utils.load_property_txt(path_absorber)
 # truncate freq over 1.7THz
-freq_truncate = 1.8  # in THz
+freq_truncate = 1.7  # in THz
 freq_step = 4
 if freq_truncate != 'none' and freq_truncate>eps_absorber_file[0,0] and freq_truncate<eps_absorber_file[-1,0]:
     N_freq_stop = np.argmax(eps_absorber_file[:,0]>freq_truncate)
@@ -148,7 +148,7 @@ D2 = 130 * micrometres
 params_eps = [eps_absorber]
 params_geometry = [Lx, Ly, [d1]]
 params_mesh = [512,512]
-order = 9
+order = 5
 PQ_order = [order,order]
 list_layer_funcs = [rcwa_utils.layerfunc_absorber_ellipse_hole]
 list_layer_params = [[D1, D2]]

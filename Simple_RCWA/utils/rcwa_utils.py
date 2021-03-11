@@ -1551,4 +1551,5 @@ class Material:
                     sys.stdout.write("Calculation Progress: %d%%" % ((100 / len(freq)) * (i_freq + 1)))
                     sys.stdout.flush()
 
+        sys.stdout.write('\n')
         return R_total, T_total

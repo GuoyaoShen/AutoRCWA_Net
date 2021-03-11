@@ -40,6 +40,13 @@ T_file = data_utils.load_property_txt(path_true_T)
 T_true = T_file[:, 1]
 T_true = T_true**2
 
+# truncate freq
+freq_truncate = 1.7  # in THz
+N_freq_stop = np.argmax(R_file[:,0]>freq_truncate)
+freq_true = freq_true[:N_freq_stop]
+R_true = R_true[:N_freq_stop]
+T_true = T_true[:N_freq_stop]
+
 
 # ================= Load RCWA Spectra
 path_rcwa = './data/absorber_ellipse_hole_PQ_21.npz'
@@ -85,9 +92,9 @@ T_rcwa5 = data['T']
 plt.figure(1)
 plt.plot(freq_true, R_true, label='true')
 # plt.plot(freq_rcwa, R_rcwa, label='rcwa21')
-# plt.plot(freq_rcwa15, R_rcwa15, label='rcwa15')
-# plt.plot(freq_rcwa13, R_rcwa13, label='rcwa13')
-# plt.plot(freq_rcwa11, R_rcwa11, label='rcwa11')
+plt.plot(freq_rcwa15, R_rcwa15, label='rcwa15')
+plt.plot(freq_rcwa13, R_rcwa13, label='rcwa13')
+plt.plot(freq_rcwa11, R_rcwa11, label='rcwa11')
 plt.plot(freq_rcwa9, R_rcwa9, label='rcwa9')
 # plt.plot(freq_rcwa5, R_rcwa5, label='rcwa5')
 plt.title('freq-Reflection')
@@ -96,9 +103,9 @@ plt.legend()
 plt.figure(2)
 plt.plot(freq_true, T_true, label='true')
 # plt.plot(freq_rcwa, T_rcwa, label='rcwa21')
-# plt.plot(freq_rcwa15, T_rcwa15, label='rcwa15')
-# plt.plot(freq_rcwa13, T_rcwa13, label='rcwa13')
-# plt.plot(freq_rcwa11, T_rcwa11, label='rcwa11')
+plt.plot(freq_rcwa15, T_rcwa15, label='rcwa15')
+plt.plot(freq_rcwa13, T_rcwa13, label='rcwa13')
+plt.plot(freq_rcwa11, T_rcwa11, label='rcwa11')
 plt.plot(freq_rcwa9, T_rcwa9, label='rcwa9')
 # plt.plot(freq_rcwa5, T_rcwa5, label='rcwa5')
 plt.title('freq-Transmission')

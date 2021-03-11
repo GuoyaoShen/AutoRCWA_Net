@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import itertools
 
 import re
+import os
 
 import torch
 import torch.nn as nn
@@ -244,6 +246,8 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
     # import params list
     # path_params_list = './data/params_list_absorber.npz'
     path_params_list = './data/' + path_material_name + '/params_list_' + path_material_name + '.npz'
+    if not os.path.exists('./data/' + path_material_name + '/'):
+        os.makedirs('./data/' + path_material_name + '/')
     if import_list:
         params_list = np.load(path_params_list)
         params_list = params_list['params_list']
@@ -294,6 +298,7 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
         list_layer_params = [[D1, D2]]
 
         if use_log:
+            print('----------------')
             print('[', (num_param), '/', N_param, '] [D1, D2] =', params)
 
         #[freq_step, freq_truncate, params_mesh, PQ_order, source, device]
@@ -312,11 +317,11 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
 
         # ================= Save Detail Data
         # path = './data/absorber/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
-        path = './data/' + path_material_name + '/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
+        # path = './data/' + path_material_name + '/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
         # np.savez(path, freq=freq, R=R_total, T=T_total)  # save detail data
-        if use_log:
-            print('\nFILE SAVED, [D1,D2] =', params)
-            print('----------------')
+        # if use_log:
+            # print('\nFILE SAVED, [D1,D2] =', params)
+            # print('\n----------------')
 
     # save params list
     np.savez(path_params_list, params_list=params_list)
@@ -373,11 +378,103 @@ def generate_dataset_absorber(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     return dataset, dataloader
 
 
+def generate_pseudo_params(params_range):
+    '''
+    Generate pseudo params.
+
+    params_range: [[range1 for D1], [range2 for D2]], a list, each entry is a list consist:
+                  [range_start, range_end, step_size].
+    '''
+
+    for idx_params, params in enumerate(itertools.product(*[range(*ele_range) for ele_range in params_range])):
+        params = np.array(params)[np.newaxis, ...]
+        if idx_params == 0:
+            pseudo_params = params
+        else:
+            pseudo_params = np.concatenate((pseudo_params, params), axis=0)
+    return pseudo_params
+
+
+def generate_pseudo_data(pseudo_params, net, device, PATH_pseudo_dataset='', flag_save_pseudo_data=False):
+    '''
+    Generate pseudo data with trained network.
+
+    pseudo_params: numpy array.
+    net: trained network.
+    device: torch available device.
+    PATH_pseudo_dataset: path to save pseudo dataset.
+    flag_save_pseudo_data: 'True' to save pseudo data.
+    '''
+
+    # params as torch tensor
+    X = torch.tensor(pseudo_params).float().to(device)
+    net = net.to(device)
+
+    # input to model and get spectra
+    y_pred = net(X)
+    y_pred_np = y_pred.cpu().detach().numpy()
+    spectra_R = y_pred_np[:, 0, :]
+    spectra_T = y_pred_np[:, 1, :]
+    if flag_save_pseudo_data:
+        np.savez(PATH_pseudo_dataset, params=pseudo_params, R=spectra_R, T=spectra_T)
+        print('Pseudo data saved')
+
+    return pseudo_params, spectra_R, spectra_T
+
+
+def spectra_search(pseudo_data, target_data, order=2, N_top=10):
+    '''
+    Perform spectra search on pseudo data with L_{order} norm.
+
+    pseudo_data: a list, [pseudo_params, spectra_R, spectra_T], each entry is a numpy array.
+    target_data: a list, [tg_idx_freq_R, tg_value_R, tg_idx_freq_T, tg_value_T], each entry is a numpy array. If NO
+                 target spectra on R or T, pass in an empty list: [].
+    N_top: top N best match spectra.
+    '''
+
+    pseudo_params = pseudo_data[0]  # # [N_pseudo, N_params]
+    spectra_R = pseudo_data[1]  # [N_pseudo, N_freq]
+    spectra_T = pseudo_data[2]
+    spectra_pseudo = np.concatenate((spectra_R, spectra_T), axis=-1)  # [N_pseudo, 2*N_freq]
+
+    tg_idx_freq_R = target_data[0]  # [N_tg,]
+    tg_value_R = target_data[1]
+    tg_idx_freq_T = target_data[2]
+    tg_value_T = target_data[3]
+    if tg_idx_freq_R.size != 0 and tg_idx_freq_T.size == 0:  # only search Reflection
+        tg_idx_freq = tg_idx_freq_R
+        tg_value = tg_value_R
+
+    elif tg_idx_freq_R.size == 0 and tg_idx_freq_T.size != 0:  # only search Transmission
+        tg_idx_freq = tg_idx_freq_T + spectra_R.shape[-1]
+        tg_value = tg_value_T
+
+    elif tg_idx_freq_R.size != 0 and tg_idx_freq_T.size != 0:  # search both spectra
+        tg_idx_freq = np.concatenate((tg_idx_freq_R, tg_idx_freq_T))
+        tg_value = np.concatenate((tg_value_R, tg_value_T))
+
+    else:
+        print('[Warning] Nothing is being spectra searched!')
+        return np.array([]), np.array([]), np.array([]), np.array([])
+
+    spectra_pseudo = spectra_pseudo[:, tg_idx_freq]  # [N_pseudo, N_tg]
+    dist = np.linalg.norm(spectra_pseudo-tg_value, ord=order, axis=1)  # distance calculation, spectra search
+
+    idx_sorted = np.argsort(dist)
+    idx_pick = idx_sorted[0:N_top]  # pick top N best match
+
+    dist_pick = dist[idx_pick, ...]  # distance
+    param_pick = pseudo_params[idx_pick, ...]  # picked param
+    R_pick = spectra_R[idx_pick, ...]
+    T_pick = spectra_T[idx_pick, ...]
+    return param_pick, R_pick, T_pick, dist_pick
+
+
 def load_data(PATH_ZIPSET):
     data = np.load(PATH_ZIPSET)
     params_list = data['params_list']
     # param_w = param_w[..., np.newaxis]
-    spectra_R = data['R']  # [N,893]
+    spectra_R = data['R']  # [N,N_freq]
     spectra_T = data['T']
 
     return params_list, spectra_R, spectra_T
