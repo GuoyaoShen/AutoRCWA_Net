@@ -27,7 +27,7 @@ yeta0 = np.sqrt(u0/e0)
 
 
 # ================= Load True Simulation Spectra
-path_true_R = './data/R_absorber.txt'
+path_true_R = './data/R_absorber_2.txt'
 R_file = data_utils.load_property_txt(path_true_R)
 freq_true = R_file[:, 0] * 1e12
 R_true = R_file[:, 1]
@@ -35,7 +35,7 @@ R_true = R_true**2
 print('freq_true.shape', freq_true.shape)
 # print(R_true)
 
-path_true_T = './data/T_absorber.txt'
+path_true_T = './data/T_absorber_2.txt'
 T_file = data_utils.load_property_txt(path_true_T)
 T_true = T_file[:, 1]
 T_true = T_true**2
@@ -84,23 +84,23 @@ T_rcwa5 = data['T']
 # ================= Plot
 plt.figure(1)
 plt.plot(freq_true, R_true, label='true')
-plt.plot(freq_rcwa, R_rcwa, label='rcwa21')
-plt.plot(freq_rcwa15, R_rcwa15, label='rcwa15')
-plt.plot(freq_rcwa13, R_rcwa13, label='rcwa13')
-plt.plot(freq_rcwa11, R_rcwa11, label='rcwa11')
+# plt.plot(freq_rcwa, R_rcwa, label='rcwa21')
+# plt.plot(freq_rcwa15, R_rcwa15, label='rcwa15')
+# plt.plot(freq_rcwa13, R_rcwa13, label='rcwa13')
+# plt.plot(freq_rcwa11, R_rcwa11, label='rcwa11')
 plt.plot(freq_rcwa9, R_rcwa9, label='rcwa9')
-plt.plot(freq_rcwa5, R_rcwa5, label='rcwa5')
+# plt.plot(freq_rcwa5, R_rcwa5, label='rcwa5')
 plt.title('freq-Reflection')
 plt.legend()
 
 plt.figure(2)
 plt.plot(freq_true, T_true, label='true')
-plt.plot(freq_rcwa, T_rcwa, label='rcwa21')
-plt.plot(freq_rcwa15, T_rcwa15, label='rcwa15')
-plt.plot(freq_rcwa13, T_rcwa13, label='rcwa13')
-plt.plot(freq_rcwa11, T_rcwa11, label='rcwa11')
+# plt.plot(freq_rcwa, T_rcwa, label='rcwa21')
+# plt.plot(freq_rcwa15, T_rcwa15, label='rcwa15')
+# plt.plot(freq_rcwa13, T_rcwa13, label='rcwa13')
+# plt.plot(freq_rcwa11, T_rcwa11, label='rcwa11')
 plt.plot(freq_rcwa9, T_rcwa9, label='rcwa9')
-plt.plot(freq_rcwa5, T_rcwa5, label='rcwa5')
+# plt.plot(freq_rcwa5, T_rcwa5, label='rcwa5')
 plt.title('freq-Transmission')
 plt.legend()
 plt.show()

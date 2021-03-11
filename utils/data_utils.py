@@ -197,13 +197,22 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
     '''
 
     # ================= Material Property Define
+    freq_step = solver_setting_list[0]
+    freq_truncate = solver_setting_list[1]
     # path_absorber = './Simple_RCWA/material_property/permittivity_absorber.txt'
     path_absorber = './Simple_RCWA/material_property/' + path_material_name + '.txt'
     eps_absorber_file = data_utils.load_property_txt(path_absorber)
-    eps_absorber_file = eps_absorber_file[::4]
+    if freq_truncate != 'none' and freq_truncate > eps_absorber_file[0, 0] and freq_truncate < eps_absorber_file[-1, 0]:
+        N_freq_stop = np.argmax(eps_absorber_file[:, 0] > freq_truncate)
+        eps_absorber_file = eps_absorber_file[:N_freq_stop]
+        print('Freq truncate.')
+    else:
+        print('No freq truncate.')
+    eps_absorber_file = eps_absorber_file[::freq_step]  # solve rcwa with a step size
     eps_absorber = eps_absorber_file[:, 1] + eps_absorber_file[:, 2] * 1j
 
     freq = eps_absorber_file[:, 0] * 1e12
+    print('freq.shape:', freq.shape)
 
     # ================= Material Structure Define
     a = 160
@@ -287,46 +296,34 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
         if use_log:
             print('[', (num_param), '/', N_param, '] [D1, D2] =', params)
 
-        #[params_mesh, PQ_order, source, device]
-        params_mesh = solver_setting_list[0]
-        PQ_order = solver_setting_list[1]
-        source = solver_setting_list[2]
-        device = solver_setting_list[3]
+        #[freq_step, freq_truncate, params_mesh, PQ_order, source, device]
+        params_mesh = solver_setting_list[2]
+        PQ_order = solver_setting_list[3]
+        source = solver_setting_list[4]
+        device = solver_setting_list[5]
         Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order,
                                              list_layer_funcs, list_layer_params, source, device, use_log)
         R_total, T_total = Si_square_hole.rcwa_solve()
 
-        R_total = R_total[np.newaxis,...]
+        R_total = R_total[np.newaxis, ...]
         T_total = T_total[np.newaxis, ...]
         R = np.concatenate((R, R_total), axis=0)
         T = np.concatenate((T, T_total), axis=0)
 
-        # ================= Spectra Plot
-        # plt.figure(1)
-        # plt.plot(freq, R_total)
-        # plt.figure(2)
-        # plt.plot(freq, T_total)
-        # plt.show()
+        # ================= Save Detail Data
         # path = './data/absorber/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
         path = './data/' + path_material_name + '/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
-        np.savez(path, freq=freq, R=R_total, T=T_total)  # save detail data
+        # np.savez(path, freq=freq, R=R_total, T=T_total)  # save detail data
         if use_log:
-            # print('\n')
             print('\nFILE SAVED, [D1,D2] =', params)
-            # print(w.shape)
-            # print(R_total.shape)
-            # print(T_total.shape)
-            # print(param_w.shape)
-            # print(R.shape)
-            # print(T.shape)
             print('----------------')
 
     # save params list
     np.savez(path_params_list, params_list=params_list)
     # save all data
-    path_all_data = './data/' + path_material_name + '/all_data_' + path_material_name + '.npz'
-    np.savez(path_all_data, params_list=params_list, R=R, T=T)
-    print('All data saved.')
+    # path_all_data = './data/' + path_material_name + '/all_data_' + path_material_name + '.npz'
+    # np.savez(path_all_data, params_list=params_list, R=R, T=T)
+    # print('All data saved.')
 
     return params_list, R, T
 

@@ -48,7 +48,7 @@ class DenseConvTranspose1D(nn.Module):
         nn.Linear(1000, 1500),
         nn.ReLU(True),
         nn.Linear(1500, self.dim_out),
-        nn.Sigmoid(),
+        # nn.Sigmoid(),
         )
 
     def forward(self, x):

@@ -58,9 +58,12 @@ def train_model(train_dataloader, test_dataloader, optimizer, loss, net, device,
             #     print('===================================================')
         print('----------------------------------------------------------------------')
         print('*** EPOCH ' + str(i + 1) + ' || AVG LOSS ' + str(running_loss / len(train_dataloader)))
+        loss_train = running_loss / len(train_dataloader)
 
         # test model for each epoch
-        test_model(test_dataloader, loss, net, device)
+        loss_test = test_model(test_dataloader, loss, net, device)
+
+    return loss_train, loss_test  # return loss for the last epoch
 
 
 
@@ -84,6 +87,8 @@ def test_model(test_dataloader, loss, net, device):
         running_loss += loss_train.item()
 
     print('### TEST LOSS ', str(running_loss/len(test_dataloader)))
+    loss_test = running_loss/len(test_dataloader)
+    return loss_test
 
 
 

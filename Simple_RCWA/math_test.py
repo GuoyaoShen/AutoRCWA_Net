@@ -41,12 +41,22 @@ Ly = 0.0002
 PQ = 1 * np.array([31, 31])
 
 
-def func1(x,a):
-    return x+a
+# def func1(x,a):
+#     return x+a
+#
+# def func2(x,a):
+#     return x*a
+#
+# list_func = [func1, func2]
+#
+# print(list_func[1](10,2))
 
-def func2(x,a):
-    return x*a
+# a = np.array([3,4,7,9,10])
+a = np.array([[0.5,7,8],[0.5,8,9],[0.6,9,10],[0.8,10,11]])
+print(a[:,0]>0.6)
+print(np.argmax(a[:,0]>0.6))
+print(np.argmin(a[:,0]>0.6))
 
-list_func = [func1, func2]
-
-print(list_func[1](10,2))
+print(a[:,0]<=0.6)
+print(np.argmax(a[:,0]<=0.6))
+print(np.argmin(a[:,0]<=0.6))

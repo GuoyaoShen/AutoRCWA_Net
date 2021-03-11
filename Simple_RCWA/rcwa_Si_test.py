@@ -122,7 +122,13 @@ Ellipse hole absorber.
 # ================= Material Property Define
 path_absorber = './material_property/permittivity_absorber.txt'
 eps_absorber_file = data_utils.load_property_txt(path_absorber)
-eps_absorber_file = eps_absorber_file[::4]
+# truncate freq over 1.7THz
+freq_truncate = 1.8  # in THz
+freq_step = 4
+if freq_truncate != 'none' and freq_truncate>eps_absorber_file[0,0] and freq_truncate<eps_absorber_file[-1,0]:
+    N_freq_stop = np.argmax(eps_absorber_file[:,0]>freq_truncate)
+    eps_absorber_file = eps_absorber_file[:N_freq_stop]
+eps_absorber_file = eps_absorber_file[::freq_step]  # solve rcwa with a step size
 eps_absorber = eps_absorber_file[:,1] + eps_absorber_file[:,2]*1j
 
 freq = eps_absorber_file[:,0]*1e12
@@ -136,8 +142,8 @@ Lx = a * micrometres  # period along x
 Ly = a * micrometres  # period along y
 d1 = t * micrometres  # thickness of layer 1
 
-D1 = 130 * micrometres  # two axes of the ellipse hole
-D2 = 150 * micrometres
+D1 = 150 * micrometres  # two axes of the ellipse hole
+D2 = 130 * micrometres
 
 params_eps = [eps_absorber]
 params_geometry = [Lx, Ly, [d1]]
