@@ -5,6 +5,8 @@ This model contrain the [Simple_RCWA](https://github.com/GuoyaoShen/Simple_RCWA)
 
 This repo is still under construction, changes might be applied.
 
+Can you "learn to design and design to learn" meta-material using neural networks? That's what we're doing now! In general, we're building a close-loop system combining RCWA method and neural networks to teach the network how to design meta-material with continuous data flow.
+
 ## Dependencies
 * numpy
 * matplotlib
