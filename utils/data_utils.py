@@ -139,54 +139,55 @@ def generate_data(num_data, w_range, path_all_data='./data/fRT.npz', w_decimal=3
     return param_w, R, T
 
 
-def generate_dataset(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
-    '''
-    Generate torch dataset and dataloader from zipped numpy dataset.
-    :param PATH_ZIPSET: path for zipped numpy dataset
-    :param idx_pick_param: list of idx of selected design params, default as empty list
-    :param BTSZ: batch size, default as 10
-    :return: dataset, dataloader: torch dataset and dataloader
-    '''
+# def generate_dataset(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
+#     '''
+#     Generate torch dataset and dataloader from zipped numpy dataset.
+#     :param PATH_ZIPSET: path for zipped numpy dataset
+#     :param idx_pick_param: list of idx of selected design params, default as empty list
+#     :param BTSZ: batch size, default as 10
+#     :return: dataset, dataloader: torch dataset and dataloader
+#     '''
+#
+#     data = np.load(PATH_ZIPSET)
+#     param_w = data['param_w']
+#     param_w = param_w[..., np.newaxis]
+#     spectra_R = data['R'] #[N,893]
+#     spectra_T = data['T']
+#     N_data = spectra_R.shape[0]
+#
+#     # [Lx,Ly,d1,d2,d3]
+#     Lx = 0.005 * millimeters  # period along x
+#     Ly = 0.005 * millimeters  # period along y
+#     d1 = 0.00015 * millimeters  # thickness of layer 1
+#     d2 = 0.0005 * millimeters  # thickness of layer 2
+#     d3 = 0.00015 * millimeters  # thickness of layer 3
+#     param_other = np.array([Lx,Ly,d1,d2,d3])
+#     param_other = np.tile(param_other, (N_data,1))
+#     param = np.concatenate((param_other, param_w), axis=-1)
+#     # print(param.shape)
+#
+#
+#     if idx_pick_param:  # select param
+#         param = param[..., idx_pick_param]
+#
+#     # concat reflection and transmission spectras as one
+#     spectra_R = np.expand_dims(spectra_R, 1)  #[N,1,893]
+#     spectra_T = np.expand_dims(spectra_T, 1)
+#     spectra_RT = np.concatenate((spectra_R, spectra_T), axis=1)  #[N,2,893]
+#     # print(spectra_RT.shape)
+#
+#     tensor_x = torch.Tensor(param)  # transform to torch tensor
+#     tensor_y = torch.Tensor(spectra_RT)
+#
+#     # generate torch dataset
+#     dataset = TensorDataset(tensor_x, tensor_y)
+#     dataloader = DataLoader(dataset, batch_size=BTSZ, shuffle=True)
+#
+#     return dataset, dataloader
 
-    data = np.load(PATH_ZIPSET)
-    param_w = data['param_w']
-    param_w = param_w[..., np.newaxis]
-    spectra_R = data['R'] #[N,893]
-    spectra_T = data['T']
-    N_data = spectra_R.shape[0]
 
-    # [Lx,Ly,d1,d2,d3]
-    Lx = 0.005 * millimeters  # period along x
-    Ly = 0.005 * millimeters  # period along y
-    d1 = 0.00015 * millimeters  # thickness of layer 1
-    d2 = 0.0005 * millimeters  # thickness of layer 2
-    d3 = 0.00015 * millimeters  # thickness of layer 3
-    param_other = np.array([Lx,Ly,d1,d2,d3])
-    param_other = np.tile(param_other, (N_data,1))
-    param = np.concatenate((param_other, param_w), axis=-1)
-    # print(param.shape)
-
-
-    if idx_pick_param:  # select param
-        param = param[..., idx_pick_param]
-
-    # concat reflection and transmission spectras as one
-    spectra_R = np.expand_dims(spectra_R, 1)  #[N,1,893]
-    spectra_T = np.expand_dims(spectra_T, 1)
-    spectra_RT = np.concatenate((spectra_R, spectra_T), axis=1)  #[N,2,893]
-    # print(spectra_RT.shape)
-
-    tensor_x = torch.Tensor(param)  # transform to torch tensor
-    tensor_y = torch.Tensor(spectra_RT)
-
-    # generate torch dataset
-    dataset = TensorDataset(tensor_x, tensor_y)
-    dataloader = DataLoader(dataset, batch_size=BTSZ, shuffle=True)
-
-    return dataset, dataloader
-
-
-def generate_data_absorber(num_data, params_range, params_decimal, solver_setting_list, path_material_name, import_list=False, use_log=False):
+def generate_data_absorber(num_data, params_range, params_decimal, solver_setting_list, path_material_name,
+                           import_list=False, use_log=False, flag_spectra_search_rerun=False, rerun_params=[]):
     '''
     Generate data for absorber using Simple_RCWA package.
 
@@ -196,6 +197,8 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
     solver_setting_list: RCWA solver setting, [params_mesh, PQ_order, source, device].
     path_material_name: name for the material, this will be used to automatically generate folders for corresponding
                         data.
+    flag_spectra_search_rerun: if True, this will run rcwa solver on picked params by spectra search.
+    rerun_params: a numpy array containing picked params by spectra search.
     '''
 
     # ================= Material Property Define
@@ -217,8 +220,8 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
     print('freq.shape:', freq.shape)
 
     # ================= Material Structure Define
-    a = 160
-    t = 75
+    a = 160.
+    t = 75.
 
     Lx = a * micrometres  # period along x
     Ly = a * micrometres  # period along y
@@ -239,101 +242,140 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
     # source = [ginc, EP]
     # device = 'gpu'
 
+    # [freq_step, freq_truncate, params_mesh, PQ_order, source, device]
+    params_mesh = solver_setting_list[2]
+    PQ_order = solver_setting_list[3]
+    source = solver_setting_list[4]
+    device = solver_setting_list[5]
 
-    # ================= Generate Data using RCWA
-    N_param = num_data
-    num_param = 0
-    # import params list
-    # path_params_list = './data/params_list_absorber.npz'
-    path_params_list = './data/' + path_material_name + '/params_list_' + path_material_name + '.npz'
-    if not os.path.exists('./data/' + path_material_name + '/'):
-        os.makedirs('./data/' + path_material_name + '/')
-    if import_list:
-        params_list = np.load(path_params_list)
-        params_list = params_list['params_list']
-    else:
-        params_list = []
+    # initialize R and T
     R = np.array([]).reshape((0, freq.shape[0]))
     T = np.array([]).reshape((0, freq.shape[0]))
 
-    # Param Sampling Space Check
-    N_needed = num_data
-    N_possible = []
-    for idx_params, ele_params_range in enumerate(params_range):
-        N_possible_i = (params_range[idx_params][1] - params_range[idx_params][0]) * 10 ** params_decimal[idx_params]
-        N_possible.append(N_possible_i)
-    if import_list:
-        N_needed += params_list.shape[0]
-    print('N_possible:', N_possible, ',', np.prod(N_possible), 'in total')
-    print('N_needed:', N_needed)
-    if N_needed > np.prod(N_possible):
-        raise ValueError('Too many sample points! Make sure: num_data + num_list < (params_range[1]-params_range[0]) * 10**params_decimal, for all params')
-    else:
-        print('Sample points number available, continue calculating...')
+    if flag_spectra_search_rerun:  # spectra search rerun
+        D1 = rerun_params[:, 0] * micrometres
+        D2 = rerun_params[:, 1] * micrometres
 
-    while num_param < N_param:  # solving loop
-        # ================= Sampling in Parameter Space
-        D1 = np.random.uniform(params_range[0][0], params_range[0][1])
-        D1 = np.around(D1, params_decimal[0])
-        D2 = np.random.uniform(params_range[1][0], params_range[1][1])
-        D2 = np.around(D2, params_decimal[1])
-        params = np.array([D1,D2])
+        # # [freq_step, freq_truncate, params_mesh, PQ_order, source, device]
+        # params_mesh = solver_setting_list[2]
+        # PQ_order = solver_setting_list[3]
+        # source = solver_setting_list[4]
+        # device = solver_setting_list[5]
 
-        if params_list==[]:
-            params_list = params[np.newaxis, ...]
+        for idx_simu in range(rerun_params.shape[0]):
+            print('[', (idx_simu+1), '/', rerun_params.shape[0], ']')
+            list_layer_params = [[D1[idx_simu], D2[idx_simu]]]
+
+            Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order,
+                                                 list_layer_funcs, list_layer_params, source, device, use_log)
+            R_total, T_total = Si_square_hole.rcwa_solve()
+
+            R_total = R_total[np.newaxis, ...]
+            T_total = T_total[np.newaxis, ...]
+            R = np.concatenate((R, R_total), axis=0)
+            T = np.concatenate((T, T_total), axis=0)
+
+        return rerun_params, R, T
+
+    else:  # normally generate rcwa simulation data
+        # ================= Generate Data using RCWA
+        N_param = num_data
+        num_param = 0
+        # import params list
+        # path_params_list = './data/params_list_absorber.npz'
+        path_params_list = './data/' + path_material_name + '/params_list_' + path_material_name + '.npz'
+        if not os.path.exists('./data/' + path_material_name + '/'):
+            os.makedirs('./data/' + path_material_name + '/')
+        if import_list:
+            params_list = np.load(path_params_list)
+            params_list = params_list['params_list']
         else:
-            if np.any(np.all(params_list-params==np.array([0,0]), axis=-1)):  # if params already in the list, continue
-                continue
+            params_list = []
+        # R = np.array([]).reshape((0, freq.shape[0]))
+        # T = np.array([]).reshape((0, freq.shape[0]))
+
+        # Param Sampling Space Check
+        N_needed = num_data
+        N_possible = []
+        for idx_params, ele_params_range in enumerate(params_range):
+            N_possible_i = (params_range[idx_params][1] - params_range[idx_params][0]) * 10 ** params_decimal[idx_params]
+            N_possible.append(N_possible_i)
+        if import_list:
+            N_needed += params_list.shape[0]
+        print('N_possible:', N_possible, ',', np.prod(N_possible), 'in total')
+        print('N_needed:', N_needed)
+        if N_needed > np.prod(N_possible):
+            raise ValueError('Too many sample points! Make sure: num_data + num_list < (params_range[1]-params_range[0]) * 10**params_decimal, for all params')
+        else:
+            print('Sample points number available, continue calculating...')
+
+        while num_param < N_param:  # solving loop
+            # ================= Sampling in Parameter Space
+            D1 = np.random.uniform(params_range[0][0], params_range[0][1])
+            D1 = np.around(D1, params_decimal[0])
+            D2 = np.random.uniform(params_range[1][0], params_range[1][1])
+            D2 = np.around(D2, params_decimal[1])
+            params = np.array([D1,D2])
+
+            if params_list==[]:
+                params_list = params[np.newaxis, ...]
             else:
-                params_list = np.concatenate((params_list, params[np.newaxis, ...]), axis=0)
+                if np.any(np.all(params_list-params==np.array([0,0]), axis=-1)):  # if params already in the list, continue
+                    continue
+                else:
+                    params_list = np.concatenate((params_list, params[np.newaxis, ...]), axis=0)
 
-        num_param += 1
+            num_param += 1
 
-        # ================= RCWA Solver
-        D1_temp = D1
-        D2_temp = D2
-        # params being changed
-        D1 = D1 * micrometres  # two axes of the ellipse hole
-        D2 = D2 * micrometres
-        list_layer_params = [[D1, D2]]
+            # ================= RCWA Solver
+            D1_temp = D1
+            D2_temp = D2
+            # params being changed
+            D1 = D1 * micrometres  # two axes of the ellipse hole
+            D2 = D2 * micrometres
+            list_layer_params = [[D1, D2]]
 
-        if use_log:
-            print('----------------')
-            print('[', (num_param), '/', N_param, '] [D1, D2] =', params)
+            if use_log:
+                print('----------------')
+                print('[', (num_param), '/', N_param, '] [D1, D2] =', params)
 
-        #[freq_step, freq_truncate, params_mesh, PQ_order, source, device]
-        params_mesh = solver_setting_list[2]
-        PQ_order = solver_setting_list[3]
-        source = solver_setting_list[4]
-        device = solver_setting_list[5]
-        Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order,
-                                             list_layer_funcs, list_layer_params, source, device, use_log)
-        R_total, T_total = Si_square_hole.rcwa_solve()
+            # #[freq_step, freq_truncate, params_mesh, PQ_order, source, device]
+            # params_mesh = solver_setting_list[2]
+            # PQ_order = solver_setting_list[3]
+            # source = solver_setting_list[4]
+            # device = solver_setting_list[5]
+            Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order,
+                                                 list_layer_funcs, list_layer_params, source, device, use_log)
+            R_total, T_total = Si_square_hole.rcwa_solve()
 
-        R_total = R_total[np.newaxis, ...]
-        T_total = T_total[np.newaxis, ...]
-        R = np.concatenate((R, R_total), axis=0)
-        T = np.concatenate((T, T_total), axis=0)
+            R_total = R_total[np.newaxis, ...]
+            T_total = T_total[np.newaxis, ...]
+            R = np.concatenate((R, R_total), axis=0)
+            T = np.concatenate((T, T_total), axis=0)
 
-        # ================= Save Detail Data
-        # path = './data/absorber/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
-        # path = './data/' + path_material_name + '/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
-        # np.savez(path, freq=freq, R=R_total, T=T_total)  # save detail data
-        # if use_log:
-            # print('\nFILE SAVED, [D1,D2] =', params)
-            # print('\n----------------')
+            # ================= Save Detail Data
+            # path = './data/absorber/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
+            # path = './data/' + path_material_name + '/detail_data/fRT_D1_' + str(D1_temp) + '_D2_' + str(D2_temp) + '.npz'
+            # np.savez(path, freq=freq, R=R_total, T=T_total)  # save detail data
+            # if use_log:
+                # print('\nFILE SAVED, [D1,D2] =', params)
+                # print('\n----------------')
 
-    # save params list
-    np.savez(path_params_list, params_list=params_list)
-    # save all data
-    # path_all_data = './data/' + path_material_name + '/all_data_' + path_material_name + '.npz'
-    # np.savez(path_all_data, params_list=params_list, R=R, T=T)
-    # print('All data saved.')
+        # save params list
+        np.savez(path_params_list, params_list=params_list)
+        # save all data
+        # path_all_data = './data/' + path_material_name + '/all_data_' + path_material_name + '.npz'
+        # np.savez(path_all_data, params_list=params_list, R=R, T=T)
+        # print('All data saved.')
 
-    return params_list, R, T
+        param_other = np.array([a, t])
+        param_other = np.tile(param_other, (N_param, 1))
+        params_list_all = np.concatenate((params_list, param_other), axis=-1)  # [params list, param other]
+
+        return params_list_all, R, T
 
 
-def generate_dataset_absorber(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
+def generate_dataset(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     '''
     Generate torch dataset and dataloader from zipped numpy dataset.
     :param PATH_ZIPSET: path for zipped numpy dataset
@@ -343,24 +385,24 @@ def generate_dataset_absorber(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     '''
 
     data = np.load(PATH_ZIPSET)
-    params_list = data['params_list']
+    params = data['params']
     # params_list = params_list[..., np.newaxis]
     spectra_R = data['R'] #[N,N_freq]
     spectra_T = data['T']
     N_data = spectra_R.shape[0]
 
     # [a,t_sub]
-    a = 160
-    t = 75
-    param_other = np.array([a, t])
-    param_other = np.tile(param_other, (N_data, 1))
-    param = np.concatenate((params_list, param_other), axis=-1)  # [params list, param other]
-    # print(param.shape)
-    # print(param)
+    # a = 160.
+    # t = 75.
+    # param_other = np.array([a, t])
+    # param_other = np.tile(param_other, (N_data, 1))
+    # param = np.concatenate((params_list, param_other), axis=-1)  # [params list, param other]
+    # # print(param.shape)
+    # # print(param)
 
 
     if idx_pick_param:  # select param
-        param = param[..., idx_pick_param]
+        params = params[..., idx_pick_param]
 
     # concat reflection and transmission spectras as one
     spectra_R = np.expand_dims(spectra_R, 1)  #[N,1,N_freq]
@@ -368,7 +410,7 @@ def generate_dataset_absorber(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     spectra_RT = np.concatenate((spectra_R, spectra_T), axis=1)  #[N,2,N_freq]
     # print(spectra_RT.shape)
 
-    tensor_x = torch.Tensor(param)  # transform to torch tensor
+    tensor_x = torch.Tensor(params)  # transform to torch tensor
     tensor_y = torch.Tensor(spectra_RT)
 
     # generate torch dataset
