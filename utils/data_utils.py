@@ -317,6 +317,7 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
             D2 = np.around(D2, params_decimal[1])
             params = np.array([D1,D2])
 
+            # params 'in-list-check', update param_list (for 'same-param-check')
             if params_list==[]:
                 params_list = params[np.newaxis, ...]
             else:
@@ -324,6 +325,13 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
                     continue
                 else:
                     params_list = np.concatenate((params_list, params[np.newaxis, ...]), axis=0)
+            # if get passed, new params is a new combination
+
+            # update current params
+            if num_param == 0:
+                params_list_current = params[np.newaxis, ...]
+            else:
+                params_list_current = np.concatenate((params_list_current, params[np.newaxis, ...]), axis=0)
 
             num_param += 1
 
@@ -369,8 +377,8 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
         # print('All data saved.')
 
         param_other = np.array([a, t])
-        param_other = np.tile(param_other, (N_param, 1))
-        params_list_all = np.concatenate((params_list, param_other), axis=-1)  # [params list, param other]
+        param_other = np.tile(param_other, (params_list_current.shape[0], 1))
+        params_list_all = np.concatenate((params_list_current, param_other), axis=-1)  # [params list, param other]
 
         return params_list_all, R, T
 
@@ -389,17 +397,6 @@ def generate_dataset(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):
     # params_list = params_list[..., np.newaxis]
     spectra_R = data['R'] #[N,N_freq]
     spectra_T = data['T']
-    N_data = spectra_R.shape[0]
-
-    # [a,t_sub]
-    # a = 160.
-    # t = 75.
-    # param_other = np.array([a, t])
-    # param_other = np.tile(param_other, (N_data, 1))
-    # param = np.concatenate((params_list, param_other), axis=-1)  # [params list, param other]
-    # # print(param.shape)
-    # # print(param)
-
 
     if idx_pick_param:  # select param
         params = params[..., idx_pick_param]
@@ -514,9 +511,9 @@ def spectra_search(pseudo_data, target_data, order=2, N_top=10):
 
 def load_data(PATH_ZIPSET):
     data = np.load(PATH_ZIPSET)
-    params_list = data['params_list']
+    params = data['params']
     # param_w = param_w[..., np.newaxis]
     spectra_R = data['R']  # [N,N_freq]
     spectra_T = data['T']
 
-    return params_list, spectra_R, spectra_T
+    return params, spectra_R, spectra_T
