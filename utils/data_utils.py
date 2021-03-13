@@ -321,7 +321,8 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
             if params_list==[]:
                 params_list = params[np.newaxis, ...]
             else:
-                if np.any(np.all(params_list-params==np.array([0,0]), axis=-1)):  # if params already in the list, continue
+                # if np.any(np.all(params_list-params==np.array([0,0]), axis=-1)):  # if params already in the list, continue
+                if np.any(np.all(params_list-params==0, axis=-1)):  # if params already in the list, continue
                     continue
                 else:
                     params_list = np.concatenate((params_list, params[np.newaxis, ...]), axis=0)
