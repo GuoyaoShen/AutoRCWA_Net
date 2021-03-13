@@ -148,12 +148,12 @@ D2 = 130 * micrometres
 params_eps = [eps_absorber]
 params_geometry = [Lx, Ly, [d1]]
 params_mesh = [512,512]
-order = 5
+order = 9
 PQ_order = [order,order]
 list_layer_funcs = [rcwa_utils.layerfunc_absorber_ellipse_hole]
 list_layer_params = [[D1, D2]]
 ginc = [0,0,1]  # orig [0,0,1], incident source
-EP = [1,0,0]  # orig [0,1,0]
+EP = [0,1,0]  # orig [0,1,0]
 source = [ginc, EP]
 device = 'gpu'
 
