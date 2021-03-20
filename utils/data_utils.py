@@ -449,6 +449,7 @@ def generate_pseudo_data(pseudo_params, net, device, PATH_pseudo_dataset='', fla
     # params as torch tensor
     X = torch.tensor(pseudo_params).float().to(device)
     net = net.to(device)
+    net.eval()
 
     # input to model and get spectra
     y_pred = net(X)
