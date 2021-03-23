@@ -499,7 +499,7 @@ def spectra_search(pseudo_data, target_data, order=2, N_top=10):
         return np.array([]), np.array([]), np.array([]), np.array([])
 
     spectra_pseudo = spectra_pseudo[:, tg_idx_freq]  # [N_pseudo, N_tg]
-    dist = np.linalg.norm(spectra_pseudo-tg_value, ord=order, axis=1)  # distance calculation, spectra search
+    dist = np.linalg.norm(spectra_pseudo-tg_value, ord=order, axis=1)  # distance calculation, spectra search, [N_pseudo,]
 
     idx_sorted = np.argsort(dist)
     idx_pick = idx_sorted[0:N_top]  # pick top N best match
