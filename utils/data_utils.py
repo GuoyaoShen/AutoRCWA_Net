@@ -469,7 +469,7 @@ def spectra_search(pseudo_data, target_data, order=2, N_top=10):
 
     pseudo_data: a list, [pseudo_params, spectra_R, spectra_T], each entry is a numpy array.
     target_data: a list, [tg_idx_freq_R, tg_value_R, tg_idx_freq_T, tg_value_T], each entry is a numpy array. If NO
-                 target spectra on R or T, pass in an empty list: [].
+                 target spectra on R or T, pass in an empty list: [] or an empty numpy array: np.array([])
     N_top: top N best match spectra.
     '''
 
@@ -483,20 +483,29 @@ def spectra_search(pseudo_data, target_data, order=2, N_top=10):
     tg_idx_freq_T = target_data[2]
     tg_value_T = target_data[3]
     if tg_idx_freq_R.size != 0 and tg_idx_freq_T.size == 0:  # only search Reflection
+        print('# search R')
         tg_idx_freq = tg_idx_freq_R
         tg_value = tg_value_R
 
     elif tg_idx_freq_R.size == 0 and tg_idx_freq_T.size != 0:  # only search Transmission
+        print('# search T')
         tg_idx_freq = tg_idx_freq_T + spectra_R.shape[-1]
         tg_value = tg_value_T
 
     elif tg_idx_freq_R.size != 0 and tg_idx_freq_T.size != 0:  # search both spectra
+        print('# search both R and T')
+        tg_idx_freq_T = tg_idx_freq_T + spectra_R.shape[-1]
         tg_idx_freq = np.concatenate((tg_idx_freq_R, tg_idx_freq_T))
         tg_value = np.concatenate((tg_value_R, tg_value_T))
 
     else:
         print('[Warning] Nothing is being spectra searched!')
         return np.array([]), np.array([]), np.array([]), np.array([])
+
+    print('#tg_idx_freq.shape:', tg_idx_freq.shape)
+    print('#tg_idx_freq:', tg_idx_freq)
+    print('#tg_value.shape:', tg_value.shape)
+    print('#tg_value:', tg_value)
 
     spectra_pseudo = spectra_pseudo[:, tg_idx_freq]  # [N_pseudo, N_tg]
     dist = np.linalg.norm(spectra_pseudo-tg_value, ord=order, axis=1)  # distance calculation, spectra search, [N_pseudo,]
