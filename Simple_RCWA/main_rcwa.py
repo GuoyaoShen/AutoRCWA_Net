@@ -94,15 +94,15 @@ w_weight_list = []
 #     print('----------------')
 
 
-# ================= RCWA Solver
-w_weight = 0.52
-w = w_weight * Ly
-print('[', (num_w), '/', N_w , '] w_weight =', w_weight)
-R_total, T_total = rcwa_utils.rcwa_solver(freq, eps_gold, eps_SiNx, w=w, use_logger=True)
-
-# ================= Spectra Plot
-plt.figure(1)
-plt.plot(freq, R_total)
-plt.figure(2)
-plt.plot(freq, T_total)
-plt.show()
+# # ================= RCWA Solver
+# w_weight = 0.52
+# w = w_weight * Ly
+# print('[', (num_w), '/', N_w , '] w_weight =', w_weight)
+# R_total, T_total = rcwa_utils.rcwa_solver(freq, eps_gold, eps_SiNx, w=w, use_logger=True)
+#
+# # ================= Spectra Plot
+# plt.figure(1)
+# plt.plot(freq, R_total)
+# plt.figure(2)
+# plt.plot(freq, T_total)
+# plt.show()

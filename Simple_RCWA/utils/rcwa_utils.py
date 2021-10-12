@@ -1067,6 +1067,100 @@ def layerfunc_absorber_ellipse_hole(ER, params_geometry, params_mesh, layer_para
     return ER
 
 
+def layerfunc_metallic_BIC(ER, params_geometry, params_mesh, layer_params):
+    '''
+    layer_params: [D1, D2, g1, g2, w]
+    D1, D2: outter and inner diameter of the pattern.
+    g1: main gap in the middle.
+    g2: gap on two sides.
+    w: width of the center strip
+    '''
+    D1, D2, g1, g2, w = layer_params[0], layer_params[1], layer_params[2], layer_params[3], layer_params[4]
+    # ================= Geometry Params
+    Lx = params_geometry[0]
+    Ly = params_geometry[1]
+    L = params_geometry[2]  # L=[d1,...,dn], thickness of layers
+
+    r = Lx / 2
+    c = Ly / 2
+
+    # ================= Mesh Params
+    Nx = params_mesh[0]
+    Ny = params_mesh[1]
+    dx = Lx / Nx
+    dy = Ly / Ny
+
+    # === Cross Sectional Grid
+    d1_grid = D1 // dx
+    d2_grid = D2 // dx
+    # band_width_grid = (D1-D2) // (2*dx)
+    band_width_grid = w // dx
+    g1_grid = g1 // dx
+    g2_grid = g2 // dx
+
+    if D1 <= Lx:
+        img_pattern = np.zeros(ER.shape)
+
+        rr_disk_d1, cc_disk_d1 = draw.disk((Nx // 2, Ny // 2), d1_grid//2)
+        rr_disk_d2, cc_disk_d2 = draw.disk((Nx // 2, Ny // 2), d2_grid//2)
+        # print('rr_disk_d1', rr_disk_d1)
+        # print('cc_disk_d1', cc_disk_d1)
+        # print('rr_disk_d2', rr_disk_d2)
+        # print('cc_disk_d2', cc_disk_d2)
+        #
+        # print('rr_disk_d1', rr_disk_d1.min())
+        # print('cc_disk_d1', cc_disk_d1.min())
+        # print('rr_disk_d2', rr_disk_d2.min())
+        # print('cc_disk_d2', cc_disk_d2.min())
+        #
+        # print('rr_disk_d1', rr_disk_d1.shape)
+
+        img_pattern[rr_disk_d1, cc_disk_d1] = 1
+        img_pattern[rr_disk_d2, cc_disk_d2] = 0  # finish circle pattern
+    else:  # D1>Lx
+        img_pattern = np.zeros((int(d1_grid), int(d1_grid)))
+
+        rr_disk_d1, cc_disk_d1 = draw.disk((d1_grid // 2, d1_grid // 2), d1_grid // 2)
+        rr_disk_d2, cc_disk_d2 = draw.disk((d1_grid // 2, d1_grid // 2), d2_grid // 2)
+
+        img_pattern[rr_disk_d1, cc_disk_d1] = 1
+        img_pattern[rr_disk_d2, cc_disk_d2] = 0  # finish circle pattern
+
+        # central clip img pattern
+        img_pattern = img_pattern[int(d1_grid // 2 - Nx // 2): int(d1_grid // 2 + Nx // 2),
+                      int(d1_grid // 2 - Nx // 2): int(d1_grid // 2 + Nx // 2)]
+
+    # print('img_pattern', img_pattern.shape)
+    assert img_pattern.shape == ER.shape, 'img_pattern.shape != ER.shape !!!'
+
+    img_pattern[int(Ny//2-d2_grid//2) : int(Ny//2+d2_grid//2),
+                int(Nx//2-band_width_grid//2) : int(Nx//2+band_width_grid//2)] = 1  # add main pillar
+
+    img_pattern[int(Ny // 2 - g2_grid // 2): int(Ny // 2 + g2_grid // 2), : int((Nx - band_width_grid) // 2)] = 0
+    img_pattern[int(Ny // 2 - g2_grid // 2): int(Ny // 2 + g2_grid // 2), -int((Nx - band_width_grid) // 2):] = 0  # finish g2 gap
+    img_pattern[int(Ny//2-g1_grid//2) : int(Ny//2+g1_grid//2),
+                int(Nx//2-band_width_grid//2) : int(Nx//2+band_width_grid//2)] = 0  # finish g1 gap
+
+    # idx_pattern = np.argwhere(img_pattern)
+
+    # Visualize pattern
+    img_ER = np.ones(ER.shape)
+    # img_ER[idx_pattern[:, 0], idx_pattern[:, 1]] = 0
+    img_ER[img_pattern == 1] = 0
+
+    # plt.figure(1)
+    # plt.imshow(img_pattern * 255, cmap='gray')
+    # plt.figure(2)
+    # plt.imshow(img_ER * 255, cmap='gray')
+    # plt.show()
+
+    # === Pattern Structure
+    ER[img_pattern == 0] = 1.  # metallic BIC pattern
+    return ER
+
+
+
+
 class Material:
     def __init__(self, freq, params_eps, params_geometry, params_mesh, PQ_order, list_layer_funcs, list_layer_params, source, device='cpu', use_logger=True):
         '''
