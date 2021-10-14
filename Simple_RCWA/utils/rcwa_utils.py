@@ -1159,6 +1159,79 @@ def layerfunc_metallic_BIC(ER, params_geometry, params_mesh, layer_params):
     return ER
 
 
+def layerfunc_diatom(ER, params_geometry, params_mesh, layer_params):
+    '''
+    layer_params: [p, d]
+    p: central distance of neighboring cylinders.
+    d: didmeter of each cylinder.
+    '''
+    p, d = layer_params[0], layer_params[1]
+    # ================= Geometry Params
+    Lx = params_geometry[0]
+    Ly = params_geometry[1]
+    L = params_geometry[2]  # L=[d1,...,dn], thickness of layers
+
+    a = Lx / 2
+    b = Ly / 2
+
+    # ================= Mesh Params
+    Nx = params_mesh[0]
+    Ny = params_mesh[1]
+    dx = Lx / Nx
+    dy = Ly / Ny
+
+    # === Cross Sectional Grid
+    # p_grid = p // dx
+    d_grid = d // dx
+    # a_grid = a // dx
+    # b_grid = b // dx
+
+    # diatom pattern
+    m = p / 2
+    n = 3**0.5 / 2 * p
+    c0 = (a, b)
+    c1 = (a + p, b)
+    c2 = (a - p, b)
+    c3 = (a +  m, b + n)
+    c4 = (a + m, b - n)
+    c5 = (a - m, b - n)
+    c6 = (a - m, b + n)
+
+    c7 = (Lx, Ly)
+    c8 = (Lx - p, Ly)
+    c9 = (Lx - m, Ly - n)
+
+    c10 = (Lx, 0)
+    c11 = (Lx - p, 0)
+    c12 = (Lx - m, n)
+
+    c13 = (0, 0)
+    c14 = (p, 0)
+    c15 = (m, n)
+
+    c16 = (0, Ly)
+    c17 = (p, Ly)
+    c18 = (m, Ly - n)
+
+    c_list = [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17, c18]
+    img_pattern = np.zeros(ER.shape)
+    for c in c_list:
+        c_grid = tuple(ci//dx for ci in c)
+        rr_c, cc_c = draw.disk(c_grid, d_grid // 2, shape=img_pattern.shape)
+        img_pattern[rr_c, cc_c] = 1
+
+    # Visualize pattern
+    plt.figure(1)
+    plt.imshow(img_pattern * 255, cmap='gray')
+    # plt.figure(2)
+    # plt.imshow(img_ER * 255, cmap='gray')
+    plt.show()
+
+    # === Pattern Structure
+    ER[img_pattern == 1] = 1.  # diatom pattern
+    return ER
+
+
 
 
 class Material:
