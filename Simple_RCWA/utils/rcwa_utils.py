@@ -1221,11 +1221,11 @@ def layerfunc_diatom(ER, params_geometry, params_mesh, layer_params):
         img_pattern[rr_c, cc_c] = 1
 
     # Visualize pattern
-    plt.figure(1)
-    plt.imshow(img_pattern * 255, cmap='gray')
-    # plt.figure(2)
-    # plt.imshow(img_ER * 255, cmap='gray')
-    plt.show()
+    # plt.figure(1)
+    # plt.imshow(img_pattern * 255, cmap='gray')
+    # # plt.figure(2)
+    # # plt.imshow(img_ER * 255, cmap='gray')
+    # plt.show()
 
     # === Pattern Structure
     ER[img_pattern == 1] = 1.  # diatom pattern
