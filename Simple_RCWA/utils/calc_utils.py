@@ -55,32 +55,6 @@ def convmat(A, P, Q=1, R=1):
             C[(row - 1).astype(int), (col - 1).astype(int)] = \
                 A[(p0 + pfft - 1).astype(int), (q0 + qfft - 1).astype(int), (r0 + rfft - 1).astype(int)]
 
-    # if use_fast_iter:  # use itertool for efficiency
-    #     for rrow, qrow, prow in itertools.product(range(R), range(Q), range(P)):
-    #         row = (rrow) * Q * P + (qrow) * P + (prow + 1)
-    #         for rcol, qcol, pcol in itertools.product(range(R), range(Q), range(P)):
-    #             col = rcol * Q * P + qcol * P + (pcol + 1)
-    #             pfft = p[prow] - p[pcol]
-    #             qfft = q[qrow] - q[qcol]
-    #             rfft = r[rrow] - r[rcol]
-    #             C[(row - 1).astype(int), (col - 1).astype(int)] = \
-    #                 A[(p0 + pfft - 1).astype(int), (q0 + qfft - 1).astype(int), (r0 + rfft - 1).astype(int)]
-    # else:  # use traditional nested for loop
-    #     for rrow in range(R):
-    #         for qrow in range(Q):
-    #             for prow in range(P):
-    #                 row = (rrow)*Q*P + (qrow)*P + (prow+1)
-    #                 for rcol in range(R):
-    #                     for qcol in range(Q):
-    #                         for pcol in range(P):
-    #                             col = rcol*Q*P + qcol*P + (pcol+1)
-    #                             pfft = p[prow] - p[pcol]
-    #                             qfft = q[qrow] - q[qcol]
-    #                             rfft = r[rrow] - r[rcol]
-    #                             C[(row-1).astype(int),(col-1).astype(int)] = \
-    #                                 A[(p0+pfft-1).astype(int),(q0+qfft-1).astype(int),(r0+rfft-1).astype(int)]
-
-    # C = C[...,np.newaxis]
     return C
 
 

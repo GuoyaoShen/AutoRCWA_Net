@@ -16,181 +16,70 @@ from Simple_RCWA.utils import rcwa_utils
 
 pi = np.pi
 
-# ================= Unit Define
+# ====== Unit Define ======
 meters = 1
 centimeters = 1e-2 * meters
 millimeters = 1e-3 * meters
 micrometres = 1e-6 * meters
 
-# ================= Constant Define
+# ====== Constant Define ======
 c0 = 3e8
 e0 = 8.85e-12
 u0 = 1.256e-6
 yeta0 = np.sqrt(u0/e0)
 
 
-# This is an example skeleton function, not for real use.
-def generate_data(num_data, w_range, path_all_data='./data/fRT.npz', w_decimal=3, import_list=False ,use_log=False):
-    '''
-    Generate data using Simple_RCWA package.
-    This is a skeleton function, not for real use.
-    '''
 
-    pi = np.pi
-
-    # ================= Unit Define
-    meters = 1
-    centimeters = 1e-2 * meters
-    millimeters = 1e-3 * meters
-
-    # ================= Constant Define
-    c0 = 3e8
-    e0 = 8.85e-12
-    u0 = 1.256e-6
-    yeta0 = np.sqrt(u0 / e0)
-
-    path_gold = './Simple_RCWA/Au3-Drude.txt'
-    eps_gold_file = data_utils.load_property_txt(path_gold, 2743, 3636)
-    eps_gold = eps_gold_file[:, 1] + eps_gold_file[:, 2] * 1j
-
-    path_SiNx = './Simple_RCWA/SiNx_property.mat'
-    eps_SiNx = data_utils.load_property_mat(path_SiNx)
-    eps_SiNx = eps_SiNx['eps_SiNx_real'] + eps_SiNx['eps_SiNx_imag'] * 1j
-
-    freq = eps_gold_file[:, 0] * 1e12
-
-    Ly = 0.005 * millimeters  # period along y
-
-
-    # ================= Generate Data using RCWA
-    N_w = num_data
-    num_w = 0
-    # import w_weight list
-    path_weight = './data/w_list.npz'
-    if import_list:
-        w_weight_list = np.load(path_weight)
-        w_weight_list = w_weight_list['w_weight_list']
-    else:
-        w_weight_list = []
-    param_w = np.array([]).reshape(0)
-    R = np.array([]).reshape((0,893))
-    T = np.array([]).reshape((0,893))
-
-    # Param Sampling Space Check
-    N_needed = num_data
-    N_possible = (w_range[1] - w_range[0]) * 10 ** w_decimal
-    if import_list:
-        N_needed += w_weight_list.shape[0]
-    print('N_possible:', N_possible)
-    print('N_needed:', N_needed)
-    if N_needed > N_possible:
-        raise ValueError('Too many sample points! Make sure: num_data + num_list < (w_range[1]-w_range[0]) * 10**w_decimal')
-    else:
-        print('Sample points number available, continue calculating...')
-
-    while num_w < N_w:  # solving loop
-        # ================= Sampling in Parameter Space
-        w_weight = np.random.uniform(w_range[0], w_range[1])
-        w_weight = np.around(w_weight, w_decimal)
-        if np.any(np.isin(w_weight_list, w_weight)):
-            continue
-        else:  # not in list, available w
-            w_weight_list = np.append(w_weight_list, w_weight)
-            num_w += 1
-
-        # ================= RCWA Solver
-        w = w_weight * Ly
-
-        if use_log:
-            print('[', (num_w), '/', N_w, '] w_weight =', w_weight)
-        R_total, T_total = rcwa_utils.rcwa_solver(freq, eps_gold, eps_SiNx, w=w, use_logger=use_log)
-
-        w = w.reshape(1)
-        param_w = np.concatenate((param_w, w))
-        R_total = R_total[np.newaxis,...]
-        T_total = T_total[np.newaxis, ...]
-        R = np.concatenate((R, R_total), axis=0)
-        T = np.concatenate((T, T_total), axis=0)
-
-        # ================= Spectra Plot
-        # plt.figure(1)
-        # plt.plot(freq, R_total)
-        # plt.figure(2)
-        # plt.plot(freq, T_total)
-        # plt.show()
-        path = './data/detail_data/fRT_w' + str(w_weight) + '.npz'
-        np.savez(path, freq=freq, R=R_total, T=T_total)
-        if use_log:
-            # print('\n')
-            print('\nFILE SAVED, w_weight =', w_weight)
-            # print(w.shape)
-            # print(R_total.shape)
-            # print(T_total.shape)
-            # print(param_w.shape)
-            # print(R.shape)
-            # print(T.shape)
-            print('----------------')
-
-    # save w_weight list
-    np.savez(path_weight, w_weight_list=w_weight_list)
-    # save all data
-    path_data = path_all_data
-    np.savez(path_data, param_w=param_w, R=R, T=T)
-    print('All data saved.')
-
-    return param_w, R, T
-
-
-
-def generate_data_absorber(num_data, params_range, params_decimal, solver_setting_list, path_material_name,
-                           import_list=False, use_log=False, flag_spectra_search_rerun=False, rerun_params=[]):
+def generate_data_absorber(num_data,
+                           params_range,
+                           solver_setting_list,
+                           params_list,
+                           use_log=False,
+                           flag_spectra_search_rerun=False,
+                           rerun_params=[]):
     '''
     Generate data for ellipse hole absorber using Simple_RCWA package.
 
-    params_range: [[range1 for D1], [range2 for D2]], a list, each entry is a list consist: [range_start, range_end].
-    params_decimal: [decimal for D1, decimal for D2], a list, each one is the desired decimal num, recommend for both to
-                    be the same (i.e., same step size).
-    solver_setting_list: RCWA solver setting, [freq_step, freq_truncate, params_mesh, PQ_order, source, device].
-    path_material_name: name for the material, this will be used to automatically generate folders for corresponding
-                        data.
-    flag_spectra_search_rerun: if True, this will run rcwa solver on picked params by spectra search.
+    params_range: [[range1 for D1], [range2 for D2]].
+                  A list of the params range from the Material class's parameter list_layer_params.
+                  Each entry is a np arange: np.arange(range_start, range_end, range_step).
+    solver_setting_list: RCWA solver setting.
+                         The elements inside are inherented from the Material class.
+                         [freq, params_eps, params_geometry, params_mesh, PQ_order, list_layer_funcs, source, device].
+                         freq: numpy array of frequencies to solve rcwa, (N_freq,).
+                         params_eps: np array of eps for all layers, each entry in the list is shape of (N_freq,).
+                         params_geometry: [Lx,Ly,[d1,...,dn]], 2D geometry params and thickness for all layers.
+                         params_mesh: [Nx,Ny], mesh number for 2D geometry.
+                         PQ_order: a list of [PQ_x, PQ_y], each entry should be a singular value.
+                         list_layer_funcs: a list of functions [f1,...,fn] applied to each layer to define patterns
+                                           inside each layer, deleting materials.
+                         source: source of incident light, a list, [ginc, EP], each entry (ginc, EP) is also a list,
+                                 both ginc and EP should be a unit vector.
+                         device: 'cpu' for CPU using numpy; 'gpu' or 'cuda' for GPU using cupy.
+    params_list: A np array containing all the sampled params in all past rounds, shape [N_sample, N_params].
+                 When the first time to start, an empty array of shape [0, N_params] should be passed in.
+    use_log: flag to show calculation log info.
+
+    ------ Params below are for spectra search rerun on picked params specifically ------
+    flag_spectra_search_rerun: if True, this will run RCWA solver on picked params by spectra search.
     rerun_params: a numpy array containing picked params by spectra search.
     '''
 
-    # ================= Material Property Define
-    freq_step = solver_setting_list[0]
-    freq_truncate = solver_setting_list[1]
-    path_absorber = './Simple_RCWA/material_property/' + path_material_name + '.txt'
-    eps_absorber_file = data_utils.load_property_txt(path_absorber)
-    if freq_truncate != 'none' and freq_truncate > eps_absorber_file[0, 0] and freq_truncate < eps_absorber_file[-1, 0]:
-        N_freq_stop = np.argmax(eps_absorber_file[:, 0] > freq_truncate)
-        eps_absorber_file = eps_absorber_file[:N_freq_stop]
-        print('Freq truncated.')
-    else:
-        print('No freq truncated.')
-    eps_absorber_file = eps_absorber_file[::freq_step]  # solve rcwa with a step size
-    eps_absorber = eps_absorber_file[:, 1] + eps_absorber_file[:, 2] * 1j
+    # ====== Material property definition ======
+    # solver_setting_list: [freq, eps, params_geometry, params_mesh, PQ_order, list_layer_funcs, source, device]
+    freq = solver_setting_list[0]
+    params_eps = solver_setting_list[1]
 
-    freq = eps_absorber_file[:, 0] * 1e12
-    print('freq.shape:', freq.shape)
 
-    # ================= Material Structure Define
-    a = 160.
-    t = 75.
+    # ====== Material structure definition ======
+    # solver_setting_list: [freq, eps, params_geometry, params_mesh, PQ_order, list_layer_funcs, source, device]
+    params_geometry = solver_setting_list[2]
+    params_mesh = solver_setting_list[3]
+    PQ_order = solver_setting_list[4]
+    list_layer_funcs = solver_setting_list[5]
+    source = solver_setting_list[6]
+    device = solver_setting_list[7]
 
-    Lx = a * micrometres  # period along x
-    Ly = a * micrometres  # period along y
-    d1 = t * micrometres  # thickness of layer 1
-
-    params_eps = [eps_absorber]
-    params_geometry = [Lx, Ly, [d1]]
-    list_layer_funcs = [rcwa_utils.layerfunc_absorber_ellipse_hole]
-
-    # [freq_step, freq_truncate, params_mesh, PQ_order, source, device]
-    params_mesh = solver_setting_list[2]
-    PQ_order = solver_setting_list[3]
-    source = solver_setting_list[4]
-    device = solver_setting_list[5]
 
     # initialize R and T
     R = np.array([]).reshape((0, freq.shape[0]))
@@ -198,7 +87,8 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
 
     if flag_spectra_search_rerun:  # spectra search rerun
         '''
-        Run RCWA on spectra search selected params, so that they can be added into the training set in the next round.
+        Run RCWA on spectra search picked params.
+        param_list will not be updated in this case.
         '''
         D1 = rerun_params[:, 0] * micrometres
         D2 = rerun_params[:, 1] * micrometres
@@ -219,27 +109,21 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
         return rerun_params, R, T
 
     else:  # normally generate rcwa simulation data
+        '''
+        Run RCWA to generate the training data.
+        param_list will be updated in this case.
+        '''
         # ================= Generate Data using RCWA
         N_param = num_data
         num_param = 0
-        # import params list
-        path_params_list = './data/' + path_material_name + '/params_list.npz'
-        if not os.path.exists('./data/' + path_material_name + '/'):
-            os.makedirs('./data/' + path_material_name + '/')
-        if import_list:
-            params_list = np.load(path_params_list)
-            params_list = params_list['params_list']
-        else:
-            params_list = []
 
-        # Param Sampling Space Check
-        N_needed = num_data
         N_possible = []
         for idx_params, ele_params_range in enumerate(params_range):
-            N_possible_i = (params_range[idx_params][1] - params_range[idx_params][0]) * 10 ** params_decimal[idx_params]
+            N_possible_i = len(ele_params_range)
             N_possible.append(N_possible_i)
-        if import_list:
-            N_needed += params_list.shape[0]
+        # if import_list:
+        #     N_needed += params_list.shape[0]
+        N_needed = num_data + params_list.shape[0]
         print('N_possible:', N_possible, ',', np.prod(N_possible), 'in total')
         print('N_needed:', N_needed)
         if N_needed > np.prod(N_possible):
@@ -247,35 +131,25 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
         else:
             print('Sample points number available, continue calculating...')
 
+        params_list_sampled = np.array([]).reshape((0, len(params_range)))  # initiate sampled params list
         while num_param < N_param:  # solving loop
-            # ================= Sampling in Parameter Space
-            D1 = np.random.uniform(params_range[0][0], params_range[0][1])
-            D1 = np.around(D1, params_decimal[0])
-            D2 = np.random.uniform(params_range[1][0], params_range[1][1])
-            D2 = np.around(D2, params_decimal[1])
+            # ====== Sampling in the parameter space ======
+            D1 = np.random.choice(params_range[0])
+            D2 = np.random.choice(params_range[1])
             params = np.array([D1,D2])
 
             # params 'in-list-check', update param_list (for 'same-param-check')
-            if params_list==[]:
-                params_list = params[np.newaxis, ...]
+            if np.any(np.all(params_list - params == 0, axis=-1)):  # if params already in the list, continue
+                continue
             else:
-                if np.any(np.all(params_list-params==0, axis=-1)):  # if params already in the list, continue
-                    continue
-                else:
-                    params_list = np.concatenate((params_list, params[np.newaxis, ...]), axis=0)
+                params_list = np.concatenate((params_list, params[np.newaxis, ...]), axis=0)
             # if get passed, new params is a new combination
 
-            # update current params
-            if num_param == 0:
-                params_list_current = params[np.newaxis, ...]
-            else:
-                params_list_current = np.concatenate((params_list_current, params[np.newaxis, ...]), axis=0)
-
+            # update sampled params list
+            params_list_sampled = np.concatenate((params_list_sampled, params[np.newaxis, ...]), axis=0)
             num_param += 1
 
-            # ================= RCWA Solver
-            D1_temp = D1
-            D2_temp = D2
+            # ====== RCWA solver ======
             # params being changed
             D1 = D1 * micrometres  # two axes of the ellipse hole
             D2 = D2 * micrometres
@@ -289,21 +163,12 @@ def generate_data_absorber(num_data, params_range, params_decimal, solver_settin
             Si_square_hole = rcwa_utils.Material(freq, params_eps, params_geometry, params_mesh, PQ_order,
                                                  list_layer_funcs, list_layer_params, source, device, use_log)
             R_total, T_total = Si_square_hole.rcwa_solve()
-
             R_total = R_total[np.newaxis, ...]
             T_total = T_total[np.newaxis, ...]
             R = np.concatenate((R, R_total), axis=0)
             T = np.concatenate((T, T_total), axis=0)
 
-        # save params list
-        np.savez(path_params_list, params_list=params_list)
-
-        param_other = np.array([a, t])
-        param_other = np.tile(param_other, (params_list_current.shape[0], 1))
-        # params_list_all = np.concatenate((params_list_current, param_other), axis=-1)  # [params list, param other]
-        params_list_all = params_list_current
-
-        return params_list_all, R, T
+        return params_list_sampled, R, T, params_list
 
 
 def generate_dataset(PATH_ZIPSET, idx_pick_param=[], BTSZ=10):

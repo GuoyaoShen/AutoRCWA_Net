@@ -41,17 +41,20 @@ eps_absorber_file = data_utils.load_property_txt(path_absorber)
 # print(eps_absorber_file)
 
 # truncate freq over 1.2 THz
-freq_truncate = [0.5, 1.5]  # in THz
+freq_truncate = [0.6, 1.4]  # in THz
 freq_step = 1
-if freq_truncate != 'none' and freq_truncate[0]>eps_absorber_file[0,0] and freq_truncate[1]<eps_absorber_file[-1,0]:
-    N_freq_start = np.argmax(eps_absorber_file[:, 0] > freq_truncate[0])
-    N_freq_stop = np.argmax(eps_absorber_file[:, 0] > freq_truncate[1])
-    eps_absorber_file = eps_absorber_file[N_freq_start: N_freq_stop]
+# if freq_truncate != 'none' and freq_truncate[0]>eps_absorber_file[0,0] and freq_truncate[1]<eps_absorber_file[-1,0]:
+#     N_freq_start = np.argmax(eps_absorber_file[:, 0] > freq_truncate[0])
+#     N_freq_stop = np.argmax(eps_absorber_file[:, 0] > freq_truncate[1])
+#     eps_absorber_file = eps_absorber_file[N_freq_start: N_freq_stop]
+#
+# eps_absorber_file = eps_absorber_file[::freq_step]  # solve rcwa with a step size
+# eps_absorber = eps_absorber_file[:,1] + eps_absorber_file[:,2]*1j
 
-eps_absorber_file = eps_absorber_file[::freq_step]  # solve rcwa with a step size
-eps_absorber = eps_absorber_file[:,1] + eps_absorber_file[:,2]*1j
+# freq = eps_absorber_file[:,0]*1e12
 
-freq = eps_absorber_file[:,0]*1e12
+freq, eps_absorber = data_utils.truncate_freq(eps_absorber_file, freq_range=freq_truncate, freq_step=freq_step)
+
 print(freq.min())
 print(freq.max())
 print(freq.shape)

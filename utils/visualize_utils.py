@@ -77,17 +77,23 @@ def visualize_learned_and_rcwa(param_pick, R_pick, T_pick, R_simu, T_simu, size_
     fig1.suptitle('Spectra of learned network and RCWA: freq-R')
     for idx_fig in range(4):
         plt.subplot(2, 2, idx_fig + 1)
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         plt.plot(np.arange(R_pick.shape[1]), R_pick[idx_fig, :], c='r')
         plt.plot(np.arange(R_simu.shape[1]), R_simu[idx_fig, :], c='b')
         plt.legend(('learned spectra', 'RCWA spectra'))
         plt.title(str(idx_fig + 1) + 'th best match')
+        plt.xlabel('frequency index')
+        plt.ylabel('response')
 
     fig2 = plt.figure(2, figsize=size_fig)
     fig2.suptitle('Spectra of learned network and RCWA: freq-T')
     for idx_fig in range(4):
         plt.subplot(2, 2, idx_fig + 1)
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         plt.plot(np.arange(T_pick.shape[1]), T_pick[idx_fig, :], c='r')
         plt.plot(np.arange(T_simu.shape[1]), T_simu[idx_fig, :], c='b')
         plt.legend(('learned spectra', 'RCWA spectra'))
         plt.title(str(idx_fig + 1) + 'th best match')
+        plt.xlabel('frequency index')
+        plt.ylabel('response')
     plt.show()

@@ -25,13 +25,13 @@ from Simple_RCWA.utils import calc_utils
 
 
 pi = np.pi
-# ================= Unit Define
+# ====== Unit Define ======
 meters = 1
 centimeters = 1e-2 * meters
 millimeters = 1e-3 * meters
 micrometres = 1e-6 * meters
 
-# ================= Constant Define
+# ====== Constant Define ======
 c0 = 3e8
 # c0 = 299792458
 e0 = 8.85e-12
@@ -1230,7 +1230,6 @@ def layerfunc_diatom(ER, params_geometry, params_mesh, layer_params):
     # === Pattern Structure
     ER[img_pattern == 1] = 1.  # diatom pattern
     return ER
-
 
 
 
